@@ -1937,7 +1937,19 @@ def GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplie
         # needed, so fields stay as wide as they can. Labels/checkbuttons are left alone (can't shrink
         # without reflowing text). width is in chars for tk/ttk Entry/Text, so shrinking the number
         # narrows them; we stop each widget once it is already narrow (reqwidth <= _FLOOR_PX).
+        # CTk widgets are NOT selectable by winfo_class(): a CTkEntry is a *Frame* wrapping an inner
+        # tk Entry, so it reports class 'Frame'. Filtering on class alone therefore matched only the
+        # INNER tk Entry, whose width is in CHARACTERS -- shrinking it leaves the outer frame's pixel
+        # width untouched, so the loop span 400 no-op iterations and every CTk GUI whose content is
+        # wider than the screen stayed clipped (NER_main, CoNLL_table_analyzer_main). Select CTk
+        # widgets by isinstance and shrink their PIXEL width; keep the legacy tk/ttk classes for the
+        # not-yet-migrated GUIs. Dropdowns (CTkOptionMenu) are excluded on purpose: unlike an entry
+        # they do not scroll, so narrowing one clips its label text with no way to read it.
         _SHRINKABLE = {'Entry', 'Text', 'TEntry', 'TCombobox', 'Spinbox', 'TSpinbox'}
+        _CTK_SHRINKABLE = tuple(
+            c for c in (getattr(ctk, n, None) for n in ('CTkEntry', 'CTkComboBox', 'CTkTextbox'))
+            if c is not None
+        )
         _FLOOR_PX = 150
 
         def _all_widgets(w, acc):
@@ -1946,8 +1958,17 @@ def GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplie
                 _all_widgets(child, acc)
             return acc
 
-        candidates = [w for w in _all_widgets(window, [])
-                      if w.winfo_class() in _SHRINKABLE]
+        # A CTk widget's inner tk Entry/Text would otherwise be picked up as a second, useless
+        # candidate; skip anything that lives inside a CTk widget we already track.
+        ctk_widgets = [w for w in _all_widgets(window, []) if isinstance(w, _CTK_SHRINKABLE)]
+        candidates = list(ctk_widgets)
+        for w in _all_widgets(window, []):
+            if w.winfo_class() not in _SHRINKABLE:
+                continue
+            if any(str(w).startswith(str(c) + '.') for c in ctk_widgets):
+                continue
+            candidates.append(w)
+
         for _ in range(400):
             window.update_idletasks()
             if window.winfo_reqwidth() <= target_w:
@@ -1960,9 +1981,16 @@ def GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplie
                 cur = int(widest.cget('width'))
             except (ValueError, tk.TclError):
                 break
-            new = max(4, cur - max(1, cur // 8))
+            if isinstance(widest, _CTK_SHRINKABLE):
+                # CTk width is in PIXELS: step down ~12% but never below the readable floor.
+                new = max(_FLOOR_PX, cur - max(8, cur // 8))
+            else:
+                # tk/ttk width is in CHARACTERS.
+                new = max(4, cur - max(1, cur // 8))
             if new >= cur:
-                break
+                # already at the floor -- drop it so the loop moves on to the next widest
+                candidates.remove(widest)
+                continue
             widest.configure(width=new)
 
     def _fit_window_to_content():
