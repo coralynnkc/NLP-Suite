@@ -231,6 +231,12 @@ reminders_dropdown_field = tk.StringVar()
 setup_menu = tk.StringVar()
 data_tools_options_widget = tk.StringVar()
 
+# The single reusable "Setup" dropdown widget/tooltip built by display_setup_hover_over(). Some
+# GUIs (SVO_main.py, parsers_annotators_main.py) call setup_parsers_annotators() themselves on top
+# of the call GUI_bottom() already makes -- see the comment in display_setup_hover_over.
+setup_menu_lb = None
+setup_menu_tooltip = None
+
 # CTk migration slice 2b: RUN and CLOSE live in their OWN frame (a bottom button bar), NOT in the
 # shared content grid. Grid columns are shared across rows, so wide content widgets (a long input-file
 # entry, the IO path displays) inflate the columns the bottom chrome sits in and push RUN/CLOSE off the
@@ -1412,25 +1418,39 @@ def get_hover_over_info(package_display_area_value):
     return hover_over_x_coordinate, hover_over_info
 
 def display_setup_hover_over(y_multiplier_integer):
-    global y_multiplier_integer_SV
+    global y_multiplier_integer_SV, setup_menu_lb, setup_menu_tooltip
 
     error, package, parsers, package_basics, language, package_display_area_value, encoding_var, export_json_var, memory_var, document_length_var, limit_sentence_length_var = config_util.read_NLP_package_language_config()
 
     hover_over_x_coordinate, hover_over_info = get_hover_over_info(package_display_area_value)
 
-    # lay the setup widget
-    setup_menu_lb = GUI_theme_util.create_option_menu(window, variable=setup_menu, values=["Setup preferences", "Setup NLP package (parsers & annotators) and corpus language",
-                                  "Setup external software"])
-
     if y_multiplier_integer_SV == 0:
         y_multiplier_integer_SV = y_multiplier_integer
-    # place widget with hover-over info
-    # TODO SETUP button
-    y_multiplier_integer = GUI_IO_util.placeWidget(window, GUI_IO_util.open_setup_x_coordinate,
-                                                   y_multiplier_integer_SV,
-                                                   setup_menu_lb, True, False, False, False, 90,
-                                                   hover_over_x_coordinate,
-                                                   hover_over_info)
+
+    # setup_parsers_annotators() (and so this function) can run more than once per GUI: GUI_bottom()
+    # always calls it once, and a couple of GUIs (SVO_main.py, parsers_annotators_main.py) call it
+    # again themselves to refresh the NLP-package display. Re-creating the option menu on every call
+    # used to grid a brand new widget each time; since a column collision on the same row bumps to
+    # the next free column instead of overlapping, each extra call added another visible "Setup"
+    # button further right -- and, since grid columns are shared across every row, widened columns
+    # that OTHER rows share too, pushing their trailing widgets off the window's right edge. Build
+    # the widget once and just refresh its tooltip text on later calls.
+    if setup_menu_lb is None:
+        setup_menu_lb = GUI_theme_util.create_option_menu(window, variable=setup_menu, values=["Setup preferences", "Setup NLP package (parsers & annotators) and corpus language",
+                                      "Setup external software"])
+        # place widget; hover-over info is bound manually below (no_hover_over_widget=True) so the
+        # tooltip instance can be kept and its text refreshed on later calls instead of stacking a
+        # new <Enter>/<Leave> binding each time.
+        y_multiplier_integer = GUI_IO_util.placeWidget(window, GUI_IO_util.open_setup_x_coordinate,
+                                                       y_multiplier_integer_SV,
+                                                       setup_menu_lb, True, True, False, False, 90,
+                                                       hover_over_x_coordinate,
+                                                       hover_over_info)
+        setup_menu_tooltip = GUI_theme_util.ToolTip(setup_menu_lb, hover_over_info)
+    else:
+        y_multiplier_integer = y_multiplier_integer_SV + 1
+        if setup_menu_tooltip is not None:
+            setup_menu_tooltip.text = hover_over_info
 
     # y_multiplier_integer=y_multiplier_integer-1
     return y_multiplier_integer, error, package, parsers, package_basics, language, package_display_area_value, encoding_var, export_json_var, memory_var, document_length_var, limit_sentence_length_var

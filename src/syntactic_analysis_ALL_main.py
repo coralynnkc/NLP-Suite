@@ -562,26 +562,32 @@ y_multiplier_integer = GUI_IO_util.placeWidget(window,
     GUI_IO_util.labels_x_indented_coordinate + 250, y_multiplier_integer,
     openInputFile_button, True, False, True, False, 90, GUI_IO_util.labels_x_indented_coordinate + 250, "Open csv dictionary file")
 
+# width=90 (chars) -> 720px via char_width_to_px, deliberately a near-full-width hub button. Placed
+# in the same narrow grid column as 'Setup INPUT/OUTPUT configuration' above, it forced that whole
+# column to 720px -- and since grid columns are shared across every row, that pushed the I/O row's
+# LATER columns ('Default I/O configuration', Paste text, the folder icons) far off to the right.
+# centerX=True spans the full row (the mechanism placeWidget already has for this) instead of
+# claiming one shared column, so the button stays full-width without inflating anything else.
 parsers_annotators_button=GUI_theme_util.create_button(window, width=90, text='Parsers & annotators (Open GUI)',command=lambda: run_script_util.run_script("parsers_annotators_main.py"))
 y_multiplier_integer = GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_coordinate, y_multiplier_integer,
-                                               parsers_annotators_button, False)
+                                               parsers_annotators_button, False, False, False, True)
 
 CoNLL_table_button=GUI_theme_util.create_button(window, width=90, text='CoNLL table analyzer (Open GUI)',command=lambda: run_script_util.run_script("CoNLL_table_analyzer_main.py"))
 y_multiplier_integer = GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_coordinate, y_multiplier_integer,
-                                               CoNLL_table_button, False)
+                                               CoNLL_table_button, False, False, False, True)
 
 SVO_button=GUI_theme_util.create_button(window, width=90, text='Subject-Verb-Object (SVO) (Open GUI)',command=lambda: run_script_util.run_script("SVO_main.py"))
 y_multiplier_integer = GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_coordinate, y_multiplier_integer,
-                                               SVO_button, False)
+                                               SVO_button, False, False, False, True)
 
 
 sentence_structure_button=GUI_theme_util.create_button(window, width=90, text='Sentence structure (Open GUI)',command=lambda: run_script_util.run_script("sentence_analysis_main.py"))
 y_multiplier_integer = GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_coordinate, y_multiplier_integer,
-                                               sentence_structure_button, False)
+                                               sentence_structure_button, False, False, False, True)
 
 style_analysis_button=GUI_theme_util.create_button(window, width=90, text='Style analysis (Open GUI)',command=lambda: run_script_util.run_script("style_analysis_main.py"))
 y_multiplier_integer = GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_coordinate, y_multiplier_integer,
-                                               style_analysis_button, False)
+                                               style_analysis_button, False, False, False, True)
 
 # vocabulary_analysis_var.set(0)
 # vocabulary_analysis_checkbox = tk.Checkbutton(window, text='More syntactic analyses', variable=vocabulary_analysis_var, onvalue=1, offvalue=0, command=lambda: activate_all_options())
