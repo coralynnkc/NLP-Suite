@@ -147,11 +147,17 @@ def test_accepted_params_excludes_self_and_varargs():
     assert "text" in params and "command" in params
 
 
-# ── the theme JSON actually loads and applies the accent (regression) ─────────
-# CTk's load_theme requires every top-level key to be a dict (it does theme[key].keys()); a stray
-# "_comment" string key raised AttributeError and silently fell back to CTk's blue theme, shipping
-# the whole suite in blue. This test loads the real file and asserts the accent red is applied.
-def test_theme_json_loads_and_applies_accent():
+# ── the theme JSON loads, and the default fill is NEUTRAL (regression) ─────────
+# Two things this guards:
+#   1. CTk's load_theme requires every top-level key to be a dict (it does theme[key].keys()); a
+#      stray "_comment" string key raised AttributeError and silently fell back to CTk's blue theme,
+#      shipping the whole suite in blue. We confirm the file's own colors reached ThemeManager.
+#   2. The default widget fill must be NEUTRAL grey, not the brand red -- red is a *signal* opted
+#      into via accent=True, never the default (the solid-red first cut was reverted; see plan §0).
+_CTK_BLUE_FALLBACK = {"#3B8ED0", "#1F6AA5"}  # CTk's stock "blue" CTkButton fg -- the bug's fingerprint
+
+
+def test_theme_json_loads_neutral_default_not_blue_fallback():
     import json
     import os
 
@@ -163,9 +169,22 @@ def test_theme_json_loads_and_applies_accent():
     non_dict = [k for k, v in data.items() if not isinstance(v, dict)]
     assert not non_dict, f"top-level theme keys must all be dicts; offenders: {non_dict}"
 
-    # Load for real through CTk and confirm the brand red reached CTkButton (not the blue fallback).
+    # Load for real through CTk and confirm the FILE's colors reached ThemeManager (not blue fallback).
     ctk.set_default_color_theme(theme_path)
     from customtkinter import ThemeManager
 
-    button_fg = ThemeManager.theme["CTkButton"]["fg_color"]
-    assert gtu.NLP_SUITE_ACCENT in button_fg, f"expected accent {gtu.NLP_SUITE_ACCENT} in {button_fg}"
+    for cls in ("CTkButton", "CTkOptionMenu"):
+        loaded_fg = ThemeManager.theme[cls]["fg_color"]
+        assert loaded_fg == data[cls]["fg_color"], f"{cls} fg didn't load from the file (blue fallback?)"
+        assert not _CTK_BLUE_FALLBACK.intersection(loaded_fg), f"{cls} is on the blue fallback"
+        # The premise: neutral by default, never the brand red.
+        assert gtu.NLP_SUITE_ACCENT not in loaded_fg, f"{cls} default fill must be neutral, not brand red"
+
+
+# ── the accent is red, opt-in, and distinct from the muted 'nothing available' grey ──
+def test_accent_constants_are_the_brand_red_and_distinct_from_muted():
+    # The RUN button and the "available" TIPS/videos/reminders dropdowns opt into this red.
+    assert gtu.NLP_SUITE_ACCENT in gtu._ACCENT_FG
+    # accent (available, red) and muted (nothing available, grey) must be visibly different cues.
+    assert gtu._ACCENT_FG != gtu._MUTED_FG
+    assert gtu.NLP_SUITE_ACCENT != gtu._MUTED_FG
