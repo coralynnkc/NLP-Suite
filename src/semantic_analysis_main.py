@@ -596,6 +596,10 @@ y_multiplier_integer = GUI_IO_util.placeWidget(window, GUI_IO_util.open_setup_x_
 
 ngrams_lb = GUI_theme_util.create_label(window,text='N-grams')
 y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.run_button_x_coordinate-55,y_multiplier_integer,ngrams_lb,True)
+# the shared grid column this label sits in is sized by other rows (the folder-icon toolbar and the
+# 'Data tools' menu also land here), leaving ~90px of dead space after the short "N-grams" text before
+# its dropdown; right-aligning the label closes that gap without touching the shared column width.
+ngrams_lb.grid_configure(sticky='e')
 ngrams_menu_var = tk.StringVar()
 ngrams_menu_var.set('1-grams')
 ngrams_menu = GUI_theme_util.create_option_menu(window,variable=ngrams_menu_var,values=['1-grams (unigrams)','2-grams (bigrams)','3-grams (trigrams)','4-grams (quadgrams)'])
