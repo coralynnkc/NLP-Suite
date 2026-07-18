@@ -307,6 +307,40 @@ DB/SQL + PCACE; statistical/visualization tools; remaining setup GUIs.
 > Verified per tranche: `pytest` (56 passed), `gui_smoke.py` (48 ok / 0 missing golden). The one
 > `gui_smoke` crash, `topic_modeling_main.py`, is a pre-existing missing `pdfminer` import, untouched.
 > All files launched on macOS. **Windows QA outstanding on every tranche.**
+>
+> **✅ Sentiment / annotator / semantic tools (2026-07-18, `ctk/phase3-sentiment-annotator`)** —
+> `sentiment_analysis`, `sentiments_emotions_ALL`, `shape_of_stories`, `html_annotator`,
+> `html_annotator_gender`, `semantic_analysis`, `semantic_aggregation`. ~107 constructors → factories,
+> 12 OptionMenus, 1 Combobox, 4 sliders. `semantic_aggregation_main.py` is this tranche's worked
+> example — it carried **four** silent-failure idioms at once (`['values']=` writes, a `textvariable=`
+> Combobox, post-construction `.configure(width=<chars>)`, and `.config(`). Two **new** shared-layer
+> gaps, both now §6 items:
+>
+> 1. ⭐ **`tk.Scale.get()` returned `int`; `CTkSlider.get()` returns `float`.** Invisible until RUN.
+>    `shape_of_stories`' memory slider is concatenated into CoreNLP's heap flag
+>    (`'-mx' + str(memory_var) + 'g'`, `Stanford_CoreNLP_util.py:612`) — `-mx6.0g` makes the JVM
+>    refuse to start; `semantic_analysis`' k-means bounds become a non-integer `n_clusters`. New
+>    `GUI_theme_util.create_slider(..., integer=True)` → `_IntSlider`. 4 sites.
+> 2. ⭐ **A legacy `.pack()` on a widget that `placeWidget` then grids is now a hard `TclError`**
+>    (`cannot use geometry manager pack inside . which already has slaves managed by grid`). Four
+>    vestigial `.pack()` calls sat next to `tk.Scale` constructions; since Phase 1 gridded
+>    `placeWidget`, they crash the GUI at import. `gui_smoke` could not see it (below). Dropped — the
+>    following `placeWidget` already positions the widget.
+>
+> **`gui_smoke` blindness #3 (found here, fixed here).** The harness reported `SMOKE_OK` for a
+> **mid-import `sys.exit(0)`**, so a GUI that bailed before building anything counted as a pass —
+> `shape_of_stories` and `semantic_analysis` sat at "OK (4 widgets)" where those 4 were a
+> `timed_alert` popup and the GUI body never ran. Now reported as its own `UNCOV` status. Turning it
+> on immediately exposed **11 GUIs with zero smoke coverage** in a bare env (all via `Stanza_util`,
+> which `sys.exit()`s at import when stanza's `resources.json` is absent) — including five from the
+> already-shipped CoNLL tranche. `UNCOV` does not fail the run (it is an environment condition, not a
+> defect), but those GUIs **must be verified by launching**. Note the fake `tkinter` in `gui_smoke`
+> also means **no geometry-manager conflict can ever be caught there** — hence gap 2 above.
+>
+> Verified: `pytest` (86 passed), `gui_smoke.py` (0 crashed / 0 missing golden). The two `UNCOV`
+> files in this tranche were verified by re-running the harness with `Stanza_util` stubbed: both
+> build every converted widget. **macOS launch + Windows QA outstanding** — this env lacks the
+> Stanza/NLTK models a real launch needs.
 
 ### Phase 4 — Hard cases (1 PR each)
 
@@ -415,6 +449,15 @@ For each `*_main.py` PR. **The starred items are silent failures — no exceptio
       factories translate `width=` on the way in, but a legacy GUI often builds a widget bare and sizes
       it afterwards — that call bypasses the factory and CTk reads the number as **pixels**. Use
       `GUI_theme_util.set_char_width(widget, chars)`.
+- [ ] ⭐ **`tk.Scale` converted with `integer=True`** if its range is integral (grep `tk.Scale(`).
+      `tk.Scale.get()` returned an `int`, `CTkSlider.get()` returns a `float`, and every legacy call
+      site feeds the number to something that wants an integer — a stray `6.0` reaches the consumer
+      unflagged and only breaks at RUN (CoreNLP's `-mx6.0g`, a float `n_clusters`).
+      `GUI_theme_util.create_slider(..., resolution=1, integer=True)`.
+- [ ] **No `.pack()` left on a widget `placeWidget` will grid** (grep `\.pack\(`). Since `placeWidget`
+      grids, a leftover `.pack()` into the same master raises `TclError` at import and the GUI never
+      opens. `gui_smoke` **cannot** catch this — its `tkinter` is a fake whose geometry calls no-op.
+      Delete the call; the `placeWidget` on the next line already positions the widget.
 - [ ] **`tk.OptionMenu` int choices converted to strings** (grep `tk.OptionMenu(` for numeric varargs).
       `CTkOptionMenu` renders `values` as text and writes selections back as strings; the bound
       `IntVar` can stay as-is.
@@ -439,7 +482,10 @@ For each `*_main.py` PR. **The starred items are silent failures — no exceptio
       (`NLP_SUITE_OPEN_WINDOWS` bookkeeping intact).
 - [ ] If the GUI writes config, verify by **equivalence** against the pre-conversion file, not by eye.
 - [ ] Escape-key `clear` binding still resets the bottom-bar dropdowns.
-- [ ] `pytest` and `python tests/gui_smoke.py` clean (0 missing golden labels).
+- [ ] `pytest` and `python tests/gui_smoke.py` clean (0 crashed, 0 missing golden labels). **A GUI
+      listed `UNCOV` was not smoke-tested at all** (it exited during import, usually a missing model
+      in this env) — verify that one by launching, or re-run the harness with the exiting module
+      stubbed to at least prove the widgets construct.
 - [ ] Checked on macOS **and** Windows (dev venv), light **and** dark appearance.
 - [ ] Before/after screenshots attached to the PR.
 
