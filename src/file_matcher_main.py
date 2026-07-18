@@ -147,7 +147,7 @@ add_file_button = GUI_theme_util.create_button(window, text='Select csv file', c
 y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_coordinate, y_multiplier_integer, add_file_button,
     True, False, True, False, 90, GUI_IO_util.labels_x_coordinate, "Click on the button to select the csv file to be used to find file matches")
 
-openInputFile_button = GUI_theme_util.create_button(window, width=GUI_IO_util.open_file_directory_button_width, text='', command=lambda: IO_files_util.openFile(window, selectedCsvFile_var.get()))
+openInputFile_button = GUI_theme_util.create_open_file_button(window, command=lambda: IO_files_util.openFile(window, selectedCsvFile_var.get()))
 # place widget with hover-over info
 y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.file_matcher_openInputFile_button_pos, y_multiplier_integer,openInputFile_button,
     True, False, True, False, 90, GUI_IO_util.file_matcher_openInputFile_button_pos, "Open INPUT csv file")

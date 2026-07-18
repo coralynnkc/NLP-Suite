@@ -515,12 +515,15 @@ y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_coordin
 
 #setup a button to open Windows Explorer on the selected input directory
 current_y_multiplier_integer=y_multiplier_integer-1
-openInputFile_button  = GUI_theme_util.create_button(window, width=GUI_IO_util.open_file_directory_button_width, text='', command=lambda: IO_files_util.openFile(window, selectedCsvFile_var.get()))
+openInputFile_button  = GUI_theme_util.create_open_file_button(window, command=lambda: IO_files_util.openFile(window, selectedCsvFile_var.get()))
 y_multiplier_integer = GUI_IO_util.placeWidget(window,
     GUI_IO_util.labels_x_coordinate+70, y_multiplier_integer,
     openInputFile_button, True)
 
-selectedCsvFile = GUI_theme_util.create_entry(window,width=110,state='disabled',textvariable=selectedCsvFile_var)
+# width=110 chars (~880px under CTk) overran the window: unlike the sibling file tools, this row
+# carries a 'Select csv field' label and its dropdown after the path entry. A named medium width
+# leaves room for both; the full path is still reachable via the open-file button to the left.
+selectedCsvFile = GUI_theme_util.create_entry(window,width=GUI_IO_util.widget_width_medium,state='disabled',textvariable=selectedCsvFile_var)
 y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_coordinate+120,y_multiplier_integer,selectedCsvFile,True)
 
 select_csv_field_lb = GUI_theme_util.create_label(window,text='Select csv field')
