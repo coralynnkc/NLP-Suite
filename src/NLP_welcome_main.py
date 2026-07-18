@@ -95,6 +95,11 @@ def open_TIPS():
 
 images = []
 
+# Height budget for the slideshow row. The three canvases share it, so a fixed value keeps them the
+# same height and stops a tall screenshot in one cell from shoving the neighbouring cells' images
+# off their own baseline.
+SLIDE_HEIGHT = 220
+
 
 def make_images(canvas_width, canvas_height):
     images.clear()
@@ -138,10 +143,25 @@ def make_images(canvas_width, canvas_height):
     return photos1, photos2, photos3
 
 
+def _center_image(event, canvas, item):
+    """Keep ``item`` in the middle of ``canvas`` as the cell resizes.
+
+    Each canvas gets its own binding and uses its OWN width/height. The previous single
+    window-level handler applied canvas1's geometry to all three canvases, so canvases 2 and 3
+    were centered against a cell that was not theirs.
+    """
+    canvas.coords(item, event.width / 2, event.height / 2)
+
+
 def run_slides():
     global photos1, photos2, photos3, canvas1, canvas_img1, canvas2, canvas_img2, image2, image3, canvas_img3, canvas3
 
-    photos1, photos2, photos3 = make_images(1000, 1000)
+    # Sized to the cell each canvas actually occupies (2 of 6 columns wide, minus the padding), not to
+    # a 1000x1000 box. make_images only ever scales DOWN, so the old budget left the wider screenshots
+    # at native size and let them overflow their cell, which is why they read as unaligned.
+    # `or 1250` mirrors the banner label below: get_GUI_width can return None on an unresolved screen.
+    cell_width = max(int((GUI_IO_util.get_GUI_width(2) or 1250) / 3) - 40, 120)
+    photos1, photos2, photos3 = make_images(cell_width, SLIDE_HEIGHT)
     img, img2, img3 = next(photos1), next(photos2), next(photos3)
 
     # the 3 canvas are used to display different types of NLP visualization output across the window
@@ -149,20 +169,30 @@ def run_slides():
     # They do need painting by hand: a bare tk.Canvas defaults to a white/platform fill with a 2px
     # focus highlight, which against the themed window ground reads as three grey plates with borders
     # framing the screenshots. normalize_legacy_backgrounds skips Canvas, so set both here.
-    canvas_style = {'background': GUI_theme_util.window_bg(), 'highlightthickness': 0, 'borderwidth': 0}
+    canvas_style = {'background': GUI_theme_util.window_bg(), 'highlightthickness': 0, 'borderwidth': 0,
+                    'height': SLIDE_HEIGHT}
 
+    # sticky='nsew' so each canvas actually FILLS its grid cell. Without it the canvas shrinks to its
+    # (unset, so default 378x265) requested size and sits centered in a cell of a different size, which
+    # is half of why the screenshots did not line up with each other.
     canvas1 = tk.Canvas(window, **canvas_style)
-    canvas1.grid(row=7, column=0, columnspan=2,padx=(20, 0))
-    canvas_img1 = canvas1.create_image(canvas1.winfo_width()/2, canvas1.winfo_height()/2, image=img, anchor=tk.CENTER)
-
+    canvas1.grid(row=7, column=0, columnspan=2, padx=(20, 0), sticky='nsew')
     canvas2 = tk.Canvas(window, **canvas_style)
-    canvas2.grid(row=7, column=2, columnspan=2)
-    canvas_img2 = canvas2.create_image(canvas1.winfo_width()/2, canvas1.winfo_height()/2, image=img2,
-                                       anchor=tk.CENTER)  # the 100,100 is not where image is on page, it's position WITHIN canvas!
-
+    canvas2.grid(row=7, column=2, columnspan=2, sticky='nsew')
     canvas3 = tk.Canvas(window, **canvas_style)
-    canvas3.grid(row=7, column=4, columnspan=2)
-    canvas_img3 = canvas3.create_image(canvas1.winfo_width()/2, canvas1.winfo_height()/2, image=img3)
+    canvas3.grid(row=7, column=4, columnspan=2, sticky='nsew')
+
+    # The other half: every image was created at (winfo_width()/2, winfo_height()/2) read BEFORE the
+    # canvases were mapped, so winfo_* returned 1 and all three images were anchored at (0.5, 0.5) --
+    # i.e. pinned to the top-left corner, not centered. canvas3's create_image also omitted
+    # anchor=tk.CENTER, so its image hung down and right of the other two. Both are fixed by placing
+    # each image at its own canvas's real center, which _center_image does on every <Configure>.
+    canvas_img1 = canvas1.create_image(0, 0, image=img, anchor=tk.CENTER)
+    canvas_img2 = canvas2.create_image(0, 0, image=img2, anchor=tk.CENTER)
+    canvas_img3 = canvas3.create_image(0, 0, image=img3, anchor=tk.CENTER)
+
+    for canvas, item in ((canvas1, canvas_img1), (canvas2, canvas_img2), (canvas3, canvas_img3)):
+        canvas.bind('<Configure>', lambda event, c=canvas, i=item: _center_image(event, c, i))
 
 
 def display_text():
@@ -219,7 +249,11 @@ def display_bottom_line_buttons():
                              accent=True,
                              font=("Arial", 14, "bold"),
                              command=lambda: run_NLP())
-    enter_button.grid(row=8, column=3, columnspan=2, rowspan=2, pady=50)
+    # column 4, not 3: with columnspan=2 from column 3 this button covered columns 3-4 and rows 8-9,
+    # i.e. exactly the cell holding the "Watch video" button, and the two were drawn on top of each
+    # other. The bottom row is now one widget per column -- TIPS (2), Watch video (3), ENTER (4),
+    # CLOSE (5) -- with nothing overlapping.
+    enter_button.grid(row=8, column=4, rowspan=2, pady=50)
 
     text_info_enter = "Click to access all the tools in the NLP Suite.\n\nLasciate ogni speranza, voi ch'entrate/Abandon hope all ye who enter here (Dante Inferno/Hell III, 9)."
 
@@ -309,23 +343,10 @@ window.rowconfigure(7, weight=1)
 for i in range(0, 6):
     window.columnconfigure(i, weight=1)
 
-def fit_images(event):
-    global photos1, photos2, photos3, canvas1, canvas2, canvas3
-    if event.widget is canvas1:
-        photos1, photos2, photos3 = make_images(event.width, event.height)
-        img = next(photos1)
-        canvas1.itemconfig(canvas_img1, image=img)
-        canvas1.coords(canvas_img1, event.width/2, event.height/2)
-
-        img2 = next(photos2)
-        canvas2.coords(canvas_img2, event.width/2, event.height/2)
-        canvas2.itemconfig(canvas_img2, image=img2)
-
-        img3 = next(photos3)
-        canvas3.coords(canvas_img3, event.width/2, event.height/2)
-        canvas3.itemconfig(canvas_img3, image=img3)
-
 local_release_version, GitHub_release_version = GUI_util.display_release()
 
-window.bind("<Configure>", fit_images)
+# The old window-level <Configure> handler (fit_images) is gone: it fired for EVERY widget's configure
+# event, rebuilt all twelve images from disk each time, and re-centered all three canvases against
+# canvas1's geometry. Centering now lives on each canvas's own <Configure> (see _center_image), and
+# the images are sized once, up front, to the cell they have to fit.
 window.mainloop()
