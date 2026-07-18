@@ -500,3 +500,9 @@ Your current version of Stanford CoreNLP will run anyway, but you should update 
 *,Narrative analysis: every option opens its own GUI,"Every checkbox in this Narrative analysis GUI is an ""Open GUI"" option: ticking one and clicking RUN opens a separate, dedicated GUI (NER, gender, sentiment arcs, coreference, GIS, SVO, shape of stories, ...) where you carry out that specific task with its own options.
 
 This GUI does not run the analyses itself; it is a launcher that takes you to the right tool.",ON
+*,TensorFlow and Mac M1 and M2 chips,"The NLP package BERT used in the NLP Suite rely on the Google Machine Learning platform TensorFlow.
+On a Mac with the new M1 or M2 chip TensorFlow may lead to various errors displayed in terminal (e.g., semaphore, zsh: illegal hardware instruction) and an inability to run any of the scripts in the NLP Suite.
+
+If you do experience this problem, while waiting for a more permanent solution to the problem, follow the instructions provided here by Apple
+
+https://developer.apple.com/metal/tensorflow-plugin/",OFF
