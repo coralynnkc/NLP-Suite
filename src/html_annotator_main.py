@@ -259,7 +259,12 @@ def showKeywordList():
         mb.showwarning(title='Warning', message='The currently selected combination of csv field values and colors are:\n\n' + ','.join(csvValue_color_list) + '\n\nPlease, press the RESET button (or ESCape) to start fresh.')
 
 show_keywords_button = GUI_theme_util.create_button(window, text='Show', width=GUI_IO_util.show_button_width,height=1,state='disabled',command=lambda: showKeywordList())
-y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_show_keywords_button,y_multiplier_integer,show_keywords_button,True)
+# end the row here (sameY=False) instead of piling the field-2/value/color widgets below onto the
+# same row: that packed 12 widgets into one grid row, and since grid columns are shared across the
+# whole window, each new widget bumped into its own never-reused column, dragging the window ~700px
+# past the screen edge (docs/ctk_GUI_overflow_status.md). Splitting across rows lets the field-2/value
+# widgets reuse the columns field-1's row already paid for.
+y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_show_keywords_button,y_multiplier_integer,show_keywords_button)
 
 # OK_button = tk.Button(window, text='OK', width=3,height=1,state='disabled',command=lambda: accept_keyword_list())
 # y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_coordinate+330,y_multiplier_integer,OK_button,True)
@@ -276,7 +281,9 @@ y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_v
 csv_field_value_menu = GUI_theme_util.create_option_menu(window, variable=csv_field_value_var,
                                             values=list(menu_values) if menu_values != '' else [menu_values])
 csv_field_value_menu.configure(state='disabled')
-y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_csv_field_value_menu,y_multiplier_integer,csv_field_value_menu,True)
+# end this row too, so 'Select color'/the color dropdown/Bold below reuse these columns rather than
+# extending the row further right
+y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_csv_field_value_menu,y_multiplier_integer,csv_field_value_menu)
 
 def changed_dictionary_filename(*args):
     csvValue_color_list.clear()
@@ -316,10 +323,15 @@ else:
 color_menu=['black','blue','green','pink','red','yellow']
 
 color_palette_dict_lb = GUI_theme_util.create_label(window, text='Select color')
-y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_color_palette_dict_lb,y_multiplier_integer,color_palette_dict_lb,True)
+# reuse the 'Select csv field 1' row's x-coordinates rather than the dedicated (far-right)
+# html_annotator_color_palette_dict_lb/menu constants: this row's grid columns are otherwise brand
+# new ones the window has to grow to fit, since it's the only row that needs them -- reusing an
+# earlier row's columns lets this content share width already paid for (see the row-split note above
+# 'Select csv field 2', and docs/ctk_GUI_overflow_status.md).
+y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.labels_x_indented_coordinate,y_multiplier_integer,color_palette_dict_lb,True)
 color_palette_dict_menu = GUI_theme_util.create_option_menu(window, variable=color_palette_dict_var, values=color_menu)
 color_palette_dict_menu.configure(state='disabled')
-y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_color_palette_dict_menu, y_multiplier_integer,color_palette_dict_menu, True)
+y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_csv_field1_menu, y_multiplier_integer,color_palette_dict_menu, True)
 
 def get_csv_fieldValues(*args):
     csv_field_value_var.set('')
@@ -373,7 +385,8 @@ color_palette_dict_var.trace('w',activate_color_palette_dict_menu)
 
 bold_dict_var.set(1)
 bold_checkbox = GUI_theme_util.create_checkbox(window, text='Bold', state='disabled',variable=bold_dict_var, onvalue=1, offvalue=0)
-y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_bold_checkbox,y_multiplier_integer,bold_checkbox)
+# reuses the '+' button's column on the 'Select csv field 1' row -- see the note above 'Select color'
+y_multiplier_integer=GUI_IO_util.placeWidget(window,GUI_IO_util.html_annotator_add_dictValue_button,y_multiplier_integer,bold_checkbox)
 
 def activateDictionary(*args):
     if html_annotator_dictionary_var.get()==1 or html_annotator_add_dictionary_var.get()==1:
@@ -466,7 +479,15 @@ def help_buttons(window,help_button_x_coordinate,y_multiplier_integer):
     y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help", 'Please, click on the button to open the gender annotator GUI for annotating text by gender (male/female), either via Stanford CoreNLP gender annotator or various gender databases (US Census, US Social Security, Carnegie Mellon).')
     y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help", 'Please, tick the checkbox \'HTML annotate corpus using csv dictionary\' if you wish to annotate txt file(s) using a csv dictionary (i.e., a list of words to be annotated).\n\nYou can also tick the checkbox \'Add annotations to a previously annotated HTML file using csv dictionary\' if you wish to annotate a previously annotated file using a csv dictionary.')
     y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help", 'Please, click on the \'Select dictionary file\' button to select the csv file that contains dictionary values.\n\nThe button becomes available only when using the dictionary as an annotator (see the widget above \'Annotate corpus (using dictionary)\'.\n\nOnce selected, you can open the dictionary file by clicking on the little square widget.')
-    y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help", 'The widgets become available only when a csv dictionary file has been selected (via the widget above \'Select dictionary file\').\n\nSelect csv field 1 is the column that contains the values used to annotate the input txt file(s). The FIRST COLUMN of the dictionary file is taken as the default column. YOU CAN SELECT A DIFFERENT COLUMN FROM THE DROPDOWN MENU Select csv field 1.\n\nIf the dictionary file contains more columns, you can select a SECOND COLUMN using the dropdown menu in Select csv field 2 to be used if you wish to use different colors for different items listed in this column. YOU CAN SELECT A DIFFERENT COLUMN FROM THE DROPDOWN MENU Select csv field 2. For example, column 1 contains words to be annotated in different colors by specific categories of field 2 (e.g., \'he\' to be annotated by a \'Gender\' column with the value \'Male\').\n\nThe specific values will have to be selected together with the specific color to be used. YOU CAN ACHIEVE THE SAME RESULT BY ANNOTATING THE SAME HTML FILE MULTIPLE TIMES USING A DIFFERENT DICTIONARY FILE ASSOCIATED EACH TIME TO A DIFFERENT COLOR.\n\n\nPress + for multiple selections.\nPress RESET (or ESCape) to delete all values entered and start fresh.\nPress Show to display all selected values.')
+    dictValue_widgets_msg = 'The widgets become available only when a csv dictionary file has been selected (via the widget above \'Select dictionary file\').\n\nSelect csv field 1 is the column that contains the values used to annotate the input txt file(s). The FIRST COLUMN of the dictionary file is taken as the default column. YOU CAN SELECT A DIFFERENT COLUMN FROM THE DROPDOWN MENU Select csv field 1.\n\nIf the dictionary file contains more columns, you can select a SECOND COLUMN using the dropdown menu in Select csv field 2 to be used if you wish to use different colors for different items listed in this column. YOU CAN SELECT A DIFFERENT COLUMN FROM THE DROPDOWN MENU Select csv field 2. For example, column 1 contains words to be annotated in different colors by specific categories of field 2 (e.g., \'he\' to be annotated by a \'Gender\' column with the value \'Male\').\n\nThe specific values will have to be selected together with the specific color to be used. YOU CAN ACHIEVE THE SAME RESULT BY ANNOTATING THE SAME HTML FILE MULTIPLE TIMES USING A DIFFERENT DICTIONARY FILE ASSOCIATED EACH TIME TO A DIFFERENT COLOR.\n\n\nPress + for multiple selections.\nPress RESET (or ESCape) to delete all values entered and start fresh.\nPress Show to display all selected values.'
+    # this explanation now covers 3 content rows (select csv field 1 / select csv field 2 & value /
+    # select color & bold) instead of 1 -- they were split across rows to stop the row from running
+    # off the right edge of the window (see docs/ctk_GUI_overflow_status.md). help_buttons()'s local
+    # counter must place one '? HELP' per content row (GUI_bottom's own trailing row is positioned off
+    # the count this function returns), so 1 message -> 3 identical calls keeps the two counters synced.
+    y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help", dictValue_widgets_msg)
+    y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help", dictValue_widgets_msg)
+    y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help", dictValue_widgets_msg)
     y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help", 'Please, tick the checkbox if you wish to run the Python 3 HTML_annotator_extractor script to extract all matched terms in your corpus as tagged in the HTML file(s).\n\nIn INPUT, the script expects previously annotated .html file(s) via DBpedia or dictionary.\n\nIn OUTPUT the script generates a csv file with the filename and term annotated, and whether it was annotated using DBpedia or dictionary.')
     y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help",GUI_IO_util.msg_openOutputFiles)
     return y_multiplier_integer -1

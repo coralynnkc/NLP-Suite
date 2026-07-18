@@ -600,16 +600,23 @@ ngrams_menu_var = tk.StringVar()
 ngrams_menu_var.set('1-grams')
 ngrams_menu = GUI_theme_util.create_option_menu(window,variable=ngrams_menu_var,values=['1-grams (unigrams)','2-grams (bigrams)','3-grams (trigrams)','4-grams (quadgrams)'])
 # place widget with hover-over info # memory_pos
+# end the row here (sameY=False) instead of adding the keywords slider as a 6th widget: columns 1 and
+# 3-6 are already claimed on this row, so the slider (200px wide, like the two above) would always be
+# bumped into a brand-new column that nothing else in the GUI shares -- pushing the window ~200px past
+# the screen edge (docs/ctk_GUI_overflow_status.md). Giving it its own row below lets it reuse the
+# k_means_max slider's column instead.
 y_multiplier_integer = GUI_IO_util.placeWidget(window, GUI_IO_util.run_button_x_coordinate+25,
                                                y_multiplier_integer,
-                                               ngrams_menu, True, False, False, False, 90,
+                                               ngrams_menu, False, False, False, False, 90,
                                                GUI_IO_util.open_TIPS_x_coordinate,
                                                "Use the dropdown menu to select the N-grams to be used in computing the highest scoring N-grams to return as cluster key terms ")
 
 top_keywords_var = GUI_theme_util.create_slider(window, from_=5, to=20, orient='horizontal', resolution=1, integer=True)
 top_keywords_var.set(10)
 # place widget with hover-over info # memory_pos
-y_multiplier_integer = GUI_IO_util.placeWidget(window, GUI_IO_util.close_button_x_coordinate+50,
+# reuse k_means_max_var's x-coordinate (open_setup_x_coordinate-40): on its own row that column
+# already carries a same-width (200px) slider, so this adds no extra width -- see the note above.
+y_multiplier_integer = GUI_IO_util.placeWidget(window, GUI_IO_util.open_setup_x_coordinate-40,
                                                y_multiplier_integer,
                                                top_keywords_var, False, False, False, False, 90,
                                                GUI_IO_util.run_button_x_coordinate,
@@ -764,6 +771,12 @@ def help_buttons(window,help_button_x_coordinate,y_multiplier_integer):
                                   "Please, use the 'Select INPUT CSV file' button to choose the CoNLL table to analyze.\n\nThe button first LISTS all CoNLL tables found for your current corpus - searching the output directory, the input directory, and the default output directory - so you can pick one directly without hunting for the file (each is labelled by its parser/corpus subfolder, e.g. a Stanza dependency parse vs a CoreNLP parse). You can also choose 'Browse for another file' to select any other CoNLL csv. If no CoNLL table is found, a file dialog opens directly.\n\nA CoNLL table is a csv file produced by a parser (spaCy, Stanford CoreNLP, or Stanza) via the Parsers & annotators GUI, in which each token is labeled with a part-of-speech tag (POSTAG), a Dependency Relation tag (DEPREL), and other linguistic information.\n\nThe selected file is validated to ensure it is a properly formatted CoNLL table." + GUI_IO_util.msg_openFile)
     y_multiplier_integer = GUI_IO_util.place_help_button(window,help_button_x_coordinate,y_multiplier_integer,"NLP Suite Help",
                                                          'Please, tick the \'GUIs available\' checkbox if you wish to see and select the range of other available tools suitable for stylistic analysis.')
+    y_multiplier_integer = GUI_IO_util.place_help_button(window, help_button_x_coordinate, y_multiplier_integer,
+                                  "NLP Suite Help",
+                                  "Please, tick the checkbox to run word Sense Induction (WSI) via BERT.")
+    # the keywords slider moved to its own row (see the row-split note above 'top_keywords_var'), so
+    # one more call keeps this function's row counter in sync -- GUI_bottom's own trailing widgets are
+    # positioned off the count this function returns.
     y_multiplier_integer = GUI_IO_util.place_help_button(window, help_button_x_coordinate, y_multiplier_integer,
                                   "NLP Suite Help",
                                   "Please, tick the checkbox to run word Sense Induction (WSI) via BERT.")
