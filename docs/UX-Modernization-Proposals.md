@@ -77,6 +77,23 @@ guess which dropdown hides the tool they want. Measured entry counts:
    Nothing on screen says so; the only hint is a warning popup if they press RUN with nothing
    selected. (Esc-to-clear is likewise invisible — documented only inside `?HELP` popups.)
 
+6. **"ALL options" launcher GUIs are a pure detour, not a destination.** Five `*_main.py` scripts
+   — `file_handler_ALL_main.py` (6 buttons), `file_search_ALL_main.py` (8),
+   `syntactic_analysis_ALL_main.py` (11), `sentiments_emotions_ALL_main.py` (5),
+   `narrative_analysis_ALL_main.py` (21) — have no logic of their own; each is just a stack of
+   buttons wired to `run_script_util.run_script(...)`, opened from its own `pydict` entry (e.g.
+   `pydict["Sentiments/emotions (ALL options GUI)"]`, `NLP_menu_main.py:297`). Since the dropdown
+   is already flat (not nested by category), an ALL entry is a peer of ordinary entries like
+   `"Sentiment analysis"` or `"Shape of stories"` — picking it just opens a second window that is
+   itself nothing but another flat list of buttons. Checked every destination inside
+   `sentiments_emotions_ALL_main.py` (`style_analysis_main.py`, `semantic_aggregation_main.py`,
+   `file_search_ALL_main.py`, `knowledge_graphs_DBpedia_YAGO_main.py`, `sentiment_analysis_main.py`,
+   `shape_of_stories_main.py`) against the main `pydict`: **every one already has its own direct
+   entry** there, so the hub adds no reachability at all — pure detour. One path is worse than a
+   detour: `sentiments_emotions_ALL_main.py`'s "Search" button opens `file_search_ALL_main.py`,
+   itself one of the five ALL GUIs — a three-window chain (menu → sentiments hub → search hub →
+   actual tool) to reach an option that also has its own direct dropdown entry.
+
 ### 1.2 Proposed direction
 
 The honest fix is to stop using dropdowns as a tool catalog. Two options, in ascending ambition:
@@ -94,6 +111,26 @@ The honest fix is to stop using dropdowns as a tool catalog. Two options, in asc
 Either way: dedupe labels, one canonical name per tool, launch on an explicit affordance rather
 than a variable trace, and show the current selection prominently (see §3 — put it *on* the RUN
 button).
+
+**On the 5 ALL-options hubs specifically (§1.1(6)):** three options, ascending effort.
+
+1. **Retire the 5 scripts; flatten to the dropdown.** Since every destination already has (or can
+   get) a direct `pydict` entry, delete the `*_ALL_main.py` files and their 5
+   `pydict[...] = ["*_ALL_main.py", 1]` rows. Cheapest real fix — but each hub's own TIPS entries
+   (e.g. `sentiments_emotions_ALL_main.py`'s "The world of emotions and sentiments" PDF) need a new
+   home: merge into the destination GUIs' TIPS lists, or attach to the dropdown itself, so nothing
+   reachable today becomes unreachable.
+2. **Keep the hub, make it earn the extra window** — add a one-line description per button
+   (dictionary- vs. neural-network-based, say; `sentiment_analysis_main`'s own `?` help text
+   already draws this distinction, just buried behind a click) that a flat dropdown entry can't
+   show. Only worth it if the hub stops being a pure duplicate of dropdown entries.
+3. **Defer** until §1.2's catalog redesign ships, so the hub question and the dropdown question
+   get solved together instead of piecemeal.
+
+If Option A (searchable catalog) above is the direction, retiring the 5 hubs is close to free —
+they'd add nothing a search box doesn't already give for less effort. If B is chosen instead (keep
+the two-tab dropdowns), the hubs are more likely worth revisiting as real sub-menus rather than
+deleting outright.
 
 ---
 
@@ -242,7 +279,8 @@ on. (Keep `IO_path_labels` publishing whatever widget results, since GUIs attach
 RUN disabled-until-selected + `RUN: <tool>` label (§3) · hide/replace empty videos/TIPS/reminders
 dropdowns, single-item dropdowns → buttons (§2.1) · status glyphs replacing disabled checkboxes
 (§2.2) · `path_display` widget (§5) · "not available" entries removed or badged (§1.1(3)) ·
-copy-editing PR + style guide (§4).
+copy-editing PR + style guide (§4) · retire the 5 ALL-options launcher GUIs, flatten into the
+dropdown (§1.1(6)).
 
 **Tier 3 — real design projects (spec first, then build):**
 
