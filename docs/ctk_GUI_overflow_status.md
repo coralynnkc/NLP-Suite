@@ -57,6 +57,7 @@ general-purpose knob — see the row-splitting technique above.
 |---|---|
 | `sample_corpus_main.py` | +426 |
 | `DB_PCACE_data_analysis_main.py` | +301 |
+| `GIS_Google_Earth_main.py` | +388 |
 | `file_search_byWord_main.py` | +191 |
 | `wordclouds_main.py` | +169 |
 | `DB_SQL_main.py` | +139 |
@@ -66,6 +67,13 @@ general-purpose knob — see the row-splitting technique above.
 
 `NLP_welcome_main.py` reports +8656 but is a false positive: its content is `.place()`d, not gridded,
 so `reqwidth` is not meaningful there.
+
+`GIS_main.py` (Phase 3 GIS tranche, `ctk/phase3-gis-tools`) could not be measured in this sandbox —
+its module-level `Stanza_util`/`spaCy_util`/`Stanford_CoreNLP_util`/`BERT_util` imports pull in
+multi-hundred-MB models and exit before the window builds when optional ML deps (`sentencepiece`,
+`tensorflow`, ...) are missing, same pre-existing gap as its `gui_smoke` `UNCOV` status. Needs
+measuring in a full Anaconda env. `GIS_distance_main.py` (+0) and `GIS_symbolic_main.py` (-88) measured
+clean on the 1470x956 reference screen.
 
 Every other GUI measured zero or negative (fits with room to spare).
 
