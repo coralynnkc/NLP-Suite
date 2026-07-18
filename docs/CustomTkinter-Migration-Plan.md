@@ -424,7 +424,54 @@ conversion.
 > neutral theme read as "everything disabled" on screen. Verified: `tests/gui_smoke.py` (44 ok, 0
 > missing golden) and `pytest` (47 passed, incl. 4 new headless `_StateFillMixin` state-round-trip
 > tests) green; launched on macOS. **Still outstanding:** Roberto's call on §0.1, Windows QA, and the
-> deferred #1648 window-geometry item. Pilot 3 (`NLP_setup_IO_main.py`) not yet started.
+> deferred #1648 window-geometry item.
+>
+> **Status (2026-07-18) — pilot 3 `NLP_setup_IO_main.py`: done** (branch `ctk/phase2-setup-io`).
+> The smallest pilot by widget count (13: 5 labels, 2 checkboxes, 1 entry, 3 OptionMenus, CLOSE) and
+> the only one that exercises the **config plumbing**, so it was verified by *equivalence* rather
+> than by eye: the same `get_IO_options_list` / `get_IO_options_str` round-trip driven across all
+> three checkbox states against the pre-conversion file, byte-identical output. That is the check to
+> reuse for the remaining `NLP_setup_*` GUIs in Phase 3 — a widget swap that quietly changes what
+> lands in a config file is not visible on screen.
+>
+> **Three findings, all suite-wide:**
+> 1. **`create_label(textvariable=…)` dropped the variable.** `CTkLabel` *supports* `textvariable`,
+>    but only by forwarding it to its inner `tkinter.Label` out of `**kwargs` — it is **not a named
+>    parameter of `CTkLabel.__init__`**, so `translate_kwargs`' signature filter dropped it silently
+>    and the two path labels rendered CTk's literal placeholder text `"CTkLabel"`. Fixed in
+>    `create_label` (forward it by hand, and blank the placeholder `text` so the variable owns the
+>    display). Exactly the pilot-2 combobox failure in a second class, and a reminder that
+>    "CTk accepts this kwarg" and "`translate_kwargs` will pass it through" are different questions.
+>    7 more `tk.Label(…textvariable=…)` sites remain suite-wide.
+> 2. **`tk.OptionMenu`'s int choices must become strings.** `tk.OptionMenu(w, var, 1, 2, 3)` is
+>    idiomatic in this suite; `CTkOptionMenu` renders `values` as label text and writes the selection
+>    back as a string. Passing ints is a type mismatch waiting in `.index()`. Converted call sites
+>    pass `str(...)`; the bound variable can stay an `IntVar` (`.set('4')` / `.get()` still yields the
+>    int every caller reads) — pinned by a test in the pilot's harness.
+> 3. **Widgets that used to overlap *exactly* now sit side by side.** This GUI deliberately placed a
+>    second label bound to the same path variable on top of the one `GUI_top` lays out, purely to
+>    carry a richer date tooltip (the long-standing `TODO Must relay the widget here` comment). Under
+>    absolute placement the two coincided and read as one; the grid gives each its own column, so the
+>    path rendered **twice**. Fixed properly rather than re-stacked: `GUI_util.IO_path_labels`
+>    publishes the canonical labels and the GUI binds its `ToolTip` to them — which is what the
+>    coordinate-free tooltip class was for. Same class as the slice-3 popup overlap; expect more of
+>    it wherever a GUI re-places a widget `GUI_top`/`GUI_bottom` already owns.
+>
+> One behavior change beyond the mechanical swap, and it is the theme's doing: `activate_fields()`
+> was never called at startup (the call sat commented out), so the date widgets began life *visually*
+> enabled and only got disabled on the first checkbox click. Harmless under stock tk; under
+> §0.1's red-active/grey-inactive rule it is the GUI lying about what is clickable. It is now called
+> once after the widgets are built, with a `warn=False` flag so the startup sync does not fire the
+> mismatched-options popup at a user who has not touched anything.
+>
+> Verified: round-trip equivalence (above), a headless harness driving every `activate_fields` branch
+> and the `_StateFillMixin` repaint, `tests/gui_smoke.py` (44 ok, 0 missing golden — this GUI is in
+> `KNOWN_SKIP`, hence the harness), `pytest` (50 passed, 3 new), and launched on macOS.
+> **Still outstanding:** Windows QA and the deferred #1648 window-geometry item.
+>
+> **Phase 2 is complete.** The recipe in §3 plus the §6 checklist below is now the deliverable for
+> Phase 3 — every pilot added at least one silent-failure item to it, so the checklist, not the
+> narrative, is what a batch-conversion contributor should work from.
 
 ### Phase 3 — Batch conversion (~6–8 PRs, 5–8 GUIs each)
 
@@ -558,6 +605,21 @@ For each `*_main.py` PR:
       `translate_kwargs` drops unknown kwargs silently — so the widget renders fine with **no bound
       variable**, killing every `.trace` on it with no error. `create_combobox` renames it; the check
       is that combobox call sites go through the factory (grep `ttk.Combobox(`).
+- [ ] **Labels bound to a variable go through `create_label`** (grep `tk.Label(.*textvariable`).
+      `CTkLabel` forwards `textvariable` to its inner tk label out of `**kwargs`, so it is invisible
+      to `translate_kwargs`' signature filter — a raw call drops it and the label displays CTk's
+      literal `"CTkLabel"` placeholder forever. Third member of the silent-drop family.
+- [ ] **`tk.OptionMenu` int choices converted to strings** (grep `tk.OptionMenu(` for numeric
+      varargs). `CTkOptionMenu` renders `values` as text and writes selections back as strings; the
+      bound `IntVar` can stay as-is.
+- [ ] **No widget re-placed on top of one `GUI_top`/`GUI_bottom` already lays out.** Several GUIs
+      stack a duplicate on the shared chrome's widget to attach their own hover text — the absolute
+      layout hid it, the grid renders it twice. Bind a `GUI_theme_util.ToolTip` to the shared widget
+      instead (`GUI_util.IO_path_labels` publishes the INPUT path labels for exactly this).
+- [ ] **Startup state sync:** if the GUI has an `activate_fields`-style enable/disable routine, it
+      must run once *after* the widgets are built. Under §0.1's red-active/grey-inactive theme a
+      widget that starts un-synced is actively mislabeled as clickable. Suppress any user-facing
+      warning on that first call.
 - [ ] No `["menu"]` OptionMenu manipulation left (grep `["menu"]`).
 - [ ] No `ttk.Style`/`theme_use` left.
 - [ ] No new `CTkImage`/`ImageTk` usage (grep).
