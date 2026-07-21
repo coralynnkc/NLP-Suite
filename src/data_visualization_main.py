@@ -17,8 +17,8 @@ if (
 
 import os
 import tkinter as tk
+import tkinter.font as tkfont
 import tkinter.messagebox as mb
-import tkinter.ttk as ttk
 
 import customtkinter as ctk
 
@@ -28,6 +28,12 @@ import GUI_theme_util
 import IO_csv_util
 import IO_files_util
 import run_script_util
+
+# The section-header labels below ("Gephi/vis.js", "Sankey", "Boxplot", ...) used a hardcoded
+# font=("Courier", ...), a leftover typewriter-style font that reads as visibly out of step with
+# every other reformatted CTk label on this GUI. Resolve the platform's actual default UI font
+# (mirrors NLP_menu_main.py's _ui_font_family) so these headers match the rest of the suite instead.
+_ui_font_family = tkfont.nametofont("TkDefaultFont").actual("family")
 
 # ── Run functions ──────────────────────────────────────────────────────────────
 
@@ -1011,9 +1017,14 @@ _TAB_INDEX = {
 
 
 def tab_help(parent, row, message):
-    """Grid a per-row ? HELP button into column 1 of a tab (was a .place() at the far-right pixel x)."""
+    """Grid a per-row ? HELP button into column 1 of a tab (was a .place() at the far-right pixel x).
+
+    ``width=10`` matches the char width ``place_help_button`` (GUI_IO_util.py) gives every other
+    GUI's ? HELP buttons; without it CTkButton falls back to its 140px default, rendering these
+    noticeably wider than the rest of the suite's reformatted (narrower) ? HELP buttons.
+    """
     GUI_theme_util.create_button(
-        parent, text="? HELP", command=lambda: mb.showinfo("NLP Suite Help", message)
+        parent, text="? HELP", width=10, command=lambda: mb.showinfo("NLP Suite Help", message)
     ).grid(row=row, column=1, sticky="ne", padx=(20, 10), pady=3)
 
 
@@ -1175,7 +1186,7 @@ tab_help(
 )
 
 Gephi_lb = GUI_theme_util.create_label(
-    _r2, text="Gephi/vis.js", foreground="red", font=("Courier", 12, "bold")
+    _r2, text="Gephi/vis.js", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 Gephi_lb.pack(side="left", padx=(0, 8))
 
@@ -1200,7 +1211,7 @@ tab_help(
 )
 
 Sankey_lb = GUI_theme_util.create_label(
-    _r3, text="Sankey", foreground="red", font=("Courier", 12, "bold")
+    _r3, text="Sankey", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 Sankey_lb.pack(side="left", padx=(0, 8))
 
@@ -1472,7 +1483,7 @@ tab_help(
 )
 
 colormap_lb = GUI_theme_util.create_label(
-    _c3, text="Colormap/heatmap", foreground="red", font=("Courier", 12, "bold")
+    _c3, text="Colormap/heatmap", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 colormap_lb.pack(side="left", padx=(0, 8))
 
@@ -1568,7 +1579,7 @@ tab_help(
 )
 
 comparative_bar_lb = GUI_theme_util.create_label(
-    _c4, text="Comparative bar charts", foreground="red", font=("Courier", 12, "bold")
+    _c4, text="Comparative bar charts", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 comparative_bar_lb.pack(side="left", padx=(0, 8))
 
@@ -1694,7 +1705,7 @@ tab_help(
 )
 
 temporal_lb = GUI_theme_util.create_label(
-    _t1, text="Time mapper", foreground="red", font=("Courier", 12, "bold")
+    _t1, text="Time mapper", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 temporal_lb.pack(side="left", padx=(0, 8))
 
@@ -1756,7 +1767,7 @@ tab_help(
 )
 
 timeline_plot_lb = GUI_theme_util.create_label(
-    _t3, text="Timeline plot", foreground="red", font=("Courier", 12, "bold")
+    _t3, text="Timeline plot", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 timeline_plot_lb.pack(side="left", padx=(0, 8))
 
@@ -1788,7 +1799,7 @@ tab_help(
 )
 
 calendar_lb = GUI_theme_util.create_label(
-    _t4, text="Calendar heatmap", foreground="red", font=("Courier", 12, "bold")
+    _t4, text="Calendar heatmap", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 calendar_lb.pack(side="left", padx=(0, 8))
 
@@ -1901,7 +1912,7 @@ tab_help(
 )
 
 Excel_Plotly_lb = GUI_theme_util.create_label(
-    _n2, text="Excel/Plotly", foreground="red", font=("Courier", 12, "bold")
+    _n2, text="Excel/Plotly", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 Excel_Plotly_lb.pack(side="left", padx=(0, 8))
 
@@ -1976,7 +1987,7 @@ tab_help(
 )
 
 boxplot_lb = GUI_theme_util.create_label(
-    _n3, text="Boxplot", foreground="red", font=("Courier", 12, "bold")
+    _n3, text="Boxplot", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 boxplot_lb.pack(side="left", padx=(0, 8))
 
@@ -2039,7 +2050,7 @@ tab_help(
 )
 
 bubble_chart_lb = GUI_theme_util.create_label(
-    _n4, text="Bubble chart", foreground="red", font=("Courier", 12, "bold")
+    _n4, text="Bubble chart", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 bubble_chart_lb.pack(side="left", padx=(0, 8))
 
@@ -2075,7 +2086,7 @@ tab_help(
 )
 
 histogram_lb = GUI_theme_util.create_label(
-    _n5, text="Histogram", foreground="red", font=("Courier", 12, "bold")
+    _n5, text="Histogram", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 histogram_lb.pack(side="left", padx=(0, 8))
 
@@ -2116,7 +2127,7 @@ tab_help(
 )
 
 violin_lb = GUI_theme_util.create_label(
-    _n6, text="Violin plot", foreground="red", font=("Courier", 12, "bold")
+    _n6, text="Violin plot", foreground="red", font=(_ui_font_family, 12, "bold")
 )
 violin_lb.pack(side="left", padx=(0, 8))
 
@@ -2151,7 +2162,7 @@ tab_help(
 )
 
 geo_description = GUI_theme_util.create_label(
-    _g0, text="Geographic visualization", font=("Courier", 12, "bold"), foreground="red"
+    _g0, text="Geographic visualization", font=(_ui_font_family, 12, "bold"), foreground="red"
 )
 geo_description.pack(side="left")
 
@@ -2244,7 +2255,7 @@ tab_help(
 geo_sep = GUI_theme_util.create_label(
     _g3,
     text="─── Animated movement map (from CSV) ───",
-    font=("Courier", 10, "bold"),
+    font=(_ui_font_family, 10, "bold"),
     foreground="#555",
 )
 geo_sep.pack(side="left")
@@ -2308,7 +2319,7 @@ tab_help(
 )
 
 wc_description = GUI_theme_util.create_label(
-    _w0, text="Wordcloud visualization", font=("Courier", 12, "bold"), foreground="red"
+    _w0, text="Wordcloud visualization", font=(_ui_font_family, 12, "bold"), foreground="red"
 )
 wc_description.pack(side="left")
 
@@ -2348,7 +2359,7 @@ tab_help(
 tree_description = GUI_theme_util.create_label(
     _tr0,
     text="Hierarchical tree visualization",
-    font=("Courier", 12, "bold"),
+    font=(_ui_font_family, 12, "bold"),
     foreground="red",
 )
 tree_description.pack(side="left")
@@ -2401,7 +2412,9 @@ tab_help(
     "Info / tooltip column (optional): extra text shown when you hover over a node.",
 )
 
-tree_info_label = GUI_theme_util.create_label(_tr3, text="Info/tooltip column (optional):")
+tree_info_label = GUI_theme_util.create_label(
+    _tr3, text="Info/tooltip column (optional):"
+)
 tree_info_label.pack(side="left", padx=(0, 8))
 tree_info_var = tk.StringVar()
 tree_info_menu = GUI_theme_util.create_combobox(
@@ -2417,7 +2430,9 @@ tab_help(
     "visually (e.g. by generation, department, or type).",
 )
 
-tree_color_label = GUI_theme_util.create_label(_tr4, text="Color-group column (optional):")
+tree_color_label = GUI_theme_util.create_label(
+    _tr4, text="Color-group column (optional):"
+)
 tree_color_label.pack(side="left", padx=(0, 8))
 tree_color_var = tk.StringVar()
 tree_color_menu = GUI_theme_util.create_combobox(
