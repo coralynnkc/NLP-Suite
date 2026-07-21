@@ -241,7 +241,7 @@ Per-file recipe: swap `tk.X(` → `GUI_theme_util.create_x(`; convert `["menu"]`
 delete `ttk.Style`/`theme_use`; run the GUI and walk §6; screenshot before/after.
 
 Tranches: file tools ✅; CoNLL tools ✅; sentiment/annotator/semantic ✅; GIS tools ✅; DB/SQL + PCACE ✅;
-statistical/visualization ✅ (partial — `charts_Excel_main.py` deferred); remaining setup GUIs. Plus
+statistical/visualization ✅ (partial — `charts_Excel_main.py` deferred); remaining setup GUIs ✅. Plus
 **`NLP_welcome_main`** ✅ (belongs to no tranche).
 
 Every completed tranche was verified per §6: `pytest` + `gui_smoke.py` clean, files launched on macOS.
@@ -337,6 +337,35 @@ entry was bound to an x-coordinate expression instead of `plus_K_words_var`, so 
 `0`. `charts_Excel_main.py` **deferred** — classic-Mac CR-only line endings need normalizing first.
 `pytest` + `gui_smoke.py` clean; `style_analysis_main.py` (`UNCOV` under stubs) verified by a headless
 real-Tk launch instead. All six fit with room to spare. **Windows QA outstanding.**
+
+**✅ Remaining setup GUIs** (2026-07-21, `ctk/phase3-setup-gui`) — `NLP_setup_external_software_main.py`,
+`NLP_setup_package_language_main.py` (`NLP_setup_IO_main.py` was already done in Phase 2). 37
+constructors → factories, 5 OptionMenus, 1 Combobox, 3 sliders, 4 empty open-file buttons cleared
+(`docs/ctk_empty_button_status.md` updated). No new shared-layer gaps; two pre-existing bugs found only
+because grid conversion exposed them, both in `NLP_setup_package_language_main.py`:
+
+1. A vestigial `.pack()` next to each of its three `tk.Scale`s (Memory / Document length / Sentence
+   length) — the same class fixed in the sentiment/annotator/semantic tranche — raised `TclError` the
+   instant `placeWidget` grids the window, so **the GUI could not open at all** pre-conversion. Dropped
+   all three; converted with `create_slider(..., resolution=1, integer=True)`.
+2. `changed_NLP_package_set_parsers()` recreates its `parsers_lb`/`parsers_display_area` labels on every
+   NLP-package change (three times during startup alone) without destroying the previous pair — under
+   the old absolute `.place()` the leftovers just sat invisibly on top of each other, but under grid each
+   one that lands on an already-occupied column band gets bumped into a fresh column, inflating the
+   window by an extra 640px-wide column per leftover copy. Fixed by destroying the previous widgets
+   before creating new ones.
+
+Also fixed a `parsers_display_area['text']` subscript read (⭐ the `widget['option']` idiom) →
+`.cget('text')`, and two `language_menu['values'] = …` writes → `set_values(...)`. Overflow:
+`NLP_setup_external_software_main.py` **0**; `NLP_setup_package_language_main.py` **+731** even after
+both bug fixes — driven by two disabled "display value" labels wide enough that the shrink pass (which
+only targets Entry-like widgets) leaves them alone; needs the row-splitting technique other overflowing
+GUIs are waiting on (`docs/ctk_GUI_overflow_status.md`). Both GUIs are `UNCOV` under `gui_smoke.py`'s
+stubs (`NLP_setup_external_software_main.py` is in `KNOWN_SKIP`; `NLP_setup_package_language_main.py`
+exits at import via `Stanza_util` without a cached model) — verified instead by a headless real-Tk
+launch (`Stanza_util`/`spaCy_util` stubbed) exercising the package/language dropdowns, the enable/disable
+choreography on the CoreNLP-only sliders, the language add/reset/show flow, and the Escape-key reset.
+`pytest` + `gui_smoke.py` clean. **Windows QA outstanding.**
 
 ### Phase 4 — Hard cases (1 PR each)
 
