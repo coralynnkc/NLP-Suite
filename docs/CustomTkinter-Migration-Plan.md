@@ -280,7 +280,7 @@ Per-file recipe: swap `tk.X(` → `GUI_theme_util.create_x(`; convert `["menu"]`
 `set_values(...)`; delete `ttk.Style`/`theme_use`; run the GUI and walk §6; screenshot before/after.
 
 Tranches group by shared quirks: file tools ✅; CoNLL tools ✅; sentiment/annotator tools ✅; GIS tools
-✅; DB/SQL + PCACE; statistical/visualization tools; remaining setup GUIs. Plus **`NLP_welcome_main`**
+✅; DB/SQL + PCACE ✅; statistical/visualization tools; remaining setup GUIs. Plus **`NLP_welcome_main`**
 ✅, which belongs to no tranche — see below.
 
 > **✅ `NLP_welcome_main` (2026-07-18, `ctk/welcome-gui`)** — converted on its own because it shares
@@ -399,6 +399,80 @@ Tranches group by shared quirks: file tools ✅; CoNLL tools ✅; sentiment/anno
 > (added to `docs/ctk_GUI_overflow_status.md`); `GIS_main.py` needs a full Anaconda env to launch (heavy
 > ML deps missing in the dev sandbox) — **user verifying by launch**. All 3 empty-open-file-button sites
 > for this tranche cleared from `docs/ctk_empty_button_status.md`. **Windows QA outstanding.**
+>
+> **✅ DB/SQL + PCACE (2026-07-20, `ctk/phase3-db-pcace`)** — `DB_SQL_main.py`, `DB_PCACE_data_validation_main.py`,
+> `DB_PCACE_data_analysis_main.py`: the tranche's three biggest single files (1663/1401/1915 lines).
+> ~119 constructors → factories (34/30/55 per file), 8 `tk.OptionMenu` → `create_option_menu`, 17
+> `ttk.Combobox` → `create_combobox`, 1 `tk.Text` → `create_textbox`, 1 `tk.Toplevel` → `CTkToplevel`
+> (the grammar-object Merge dialog in `DB_PCACE_data_analysis_main.py`, whose packed children convert
+> the same as any other widget — a `CTkToplevel` still accepts `.pack()` on its own children same as
+> stock `Toplevel`). Two new shared-layer gaps found here, both fixed in `GUI_theme_util` rather than
+> patched per call site:
+>
+> 1. **`create_textbox` silently dropped `state=`.** `CTkTextbox.__init__` forwards a set of native
+>    `tk.Text` attributes (`state`, `wrap`, `undo`, ...) to its inner `tkinter.Text` via a `**kwargs`
+>    catch-all instead of naming them — so `translate_kwargs`' signature-based filter (which only keeps
+>    *named* parameters) silently dropped `state='disabled'`. `SQL_query_entry` would have opened
+>    permanently editable instead of starting disabled until a query exists. Caught before a single
+>    real call site used `create_textbox` (this tranche is its first use anywhere in the suite) by
+>    reading `CTkTextbox.__init__` rather than by a RUN. Fixed by pulling
+>    `CTkTextbox._valid_tk_text_attributes` out before the signature filter runs and forwarding them
+>    unfiltered; `tests/gui_smoke.py`'s hand-written CTk stub needed the same class attribute added or
+>    it would have reintroduced the bug invisibly. New `TestCreateTextboxState` in
+>    `tests/test_gui_theme_util.py`.
+> 2. **`CTkComboBox` has no ttk-style `<<ComboboxSelected>>` virtual event.** Both PCACE files bound
+>    `.bind('<<ComboboxSelected>>', ...)` on comboboxes (mostly just to return focus to the window
+>    after a selection) — CTkComboBox fires a `command=(value)` callback on selection instead and never
+>    generates that virtual event, so every one of those binds becomes a permanent no-op post-
+>    conversion: harmless here (mostly cosmetic focus-return), but a silent-failure class worth naming
+>    since a future GUI could easily hang real logic off it. Fixed by moving the same handler to
+>    `command=` at each combobox's construction instead (the bound `variable=` still fires its own
+>    `.trace('w', ...)` normally on selection either way, since `CTkComboBox` syncs the variable through
+>    a real inner `tkinter.Entry`).
+>
+> Three more already-catalogued idioms, found here in new shapes:
+>
+> 1. **A `.place()` call on a `placeWidget`-gridded widget, worse than the known `.pack()` landmine.**
+>    `DB_SQL_main.py`'s `_align_widgets_to_close` tried to right-align the SQL query box and two
+>    buttons against the CLOSE button via `.place(width=...)` / `.place(x=...)` — but Tk's geometry
+>    managers are mutually exclusive per widget, and the first `place()` call on an already-gridded
+>    widget defaults every *unspecified* option (here, always `y`) to 0. Verified empirically: it was
+>    **already silently teleporting all three widgets to the window's top-left corner under stock
+>    tk**, before this conversion touched anything. Under CTk it fails louder instead of quieter —
+>    `CTkBaseClass.place()` raises `ValueError` for `width`/`height` outright. Removed rather than
+>    ported; there was no working layout left to preserve. `.pack()` raises immediately and loudly
+>    (`tests/gui_smoke.py` still can't catch either — its fake tkinter no-ops all geometry calls).
+> 2. **More dead if/else `OptionMenu(*values) else OptionMenu(values)` branches**, the same class the
+>    GIS tranche collapsed: `table_menu_values`/`table_fields_menu_values` in `DB_SQL_main.py` are
+>    always `[]` at construction (only ever populated later, by a `trace` callback, into a
+>    function-local shadow that never reaches the module-level list read at construction time), so
+>    both branches always built the same empty menu. Collapsed to one `create_option_menu(...,
+>    values=[])` call per site; real values arrive later via `set_values()`.
+> 3. **A `ttk.Style()` hover-color hack**, layered on top of the by-now-familiar manual
+>    `e.widget.config(background=..., foreground=...)` hover recolor (3 more instances, one on a
+>    combobox in `DB_PCACE_data_analysis_main.py`'s `_update_combo_hover`, two on checkboxes/buttons in
+>    `_update_last_updated_hovers`) — all dropped; CTk's own `hover_color` covers it.
+>
+> **Unlabeled checkboxes and empty open-file buttons, promised by the previous tranches' notes, cleared
+> here:** the 10 sites `docs/ctk_empty_button_status.md` flagged as "worth giving each a short inline
+> label when the DB/PCACE tranche lands" (9 in `DB_PCACE_data_analysis_main.py`, 1 in `DB_SQL_main.py`)
+> now carry one (e.g. "IDs", "Ext hdrs", "GIS map"); the 2 remaining empty open-file-button sites for
+> these files are cleared via `create_open_file_button`.
+>
+> Verified: `pytest` (91 passed, including the 2 new `create_textbox` tests), `gui_smoke.py` (0 crashed
+> / 0 missing golden new to this tranche; `DB_PCACE_data_validation_main.py` is `UNCOV` — its
+> module-level `Stanza_util` import exits without a model cache, same pre-existing gap as the sentiment
+> tranche's 11 `UNCOV` files, re-verified by constructing it directly against a real Tk/CTk instance
+> with `Stanza_util` stubbed: builds clean, 0 exceptions). All three files also exercised beyond mere
+> construction — enable/disable choreography, combobox `command=` callbacks, dynamic `set_values()`
+> repopulation, the ESC-key reset, and the Merge `CTkToplevel` dialog — against a real (not stubbed)
+> Tk/CTk instance with `mainloop` patched to a no-op. `DB_PCACE_data_validation_main.py` now measures
+> **0** overflow (was +59, incidental to the widget-factory conversion, not a deliberate layout fix);
+> `DB_PCACE_data_analysis_main.py` measures +297 (was +301, essentially unchanged);
+> `DB_SQL_main.py` measures **+167, worse than its pre-conversion +139** — the char→px translation
+> nets wider than the raw tk widths it replaced on this GUI specifically (updated in
+> `docs/ctk_GUI_overflow_status.md`, still needs the row-splitting technique other tranches used).
+> **macOS launch verified for all three (headless real-Tk construction); Windows QA outstanding.**
 
 ### Phase 4 — Hard cases (1 PR each)
 
