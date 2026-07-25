@@ -5,11 +5,10 @@ import ast
 import importlib.util
 import json
 import os
+from pathlib import Path
 import platform
 import subprocess
 import sys
-from pathlib import Path
-
 
 CRITICAL_MODULES = [
     "tkinter",
@@ -38,7 +37,7 @@ IGNORED_SOURCE_IMPORTS = {
     "win32gui",
     "winreg",
     "transformer_srl",  # SRL: separate Python 3.8 env via setup_SRL.py
-    "allennlp",         # SRL dependency, same separate env
+    "allennlp",  # SRL dependency, same separate env
 }
 
 
@@ -99,11 +98,7 @@ def imported_modules(source_directory):
                 names = [node.module.split(".", 1)[0]]
 
             for name in names:
-                if (
-                    name not in local_modules
-                    and name not in standard_modules
-                    and name not in IGNORED_SOURCE_IMPORTS
-                ):
+                if name not in local_modules and name not in standard_modules and name not in IGNORED_SOURCE_IMPORTS:
                     modules.add(name)
 
     return modules, parse_errors

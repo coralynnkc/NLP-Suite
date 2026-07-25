@@ -1,39 +1,42 @@
 import sys
+
 import GUI_util
 import IO_libraries_util
 
-if IO_libraries_util.install_all_Python_packages(GUI_util.window, "character_emotion_arcs_util",
-        ['os', 'csv', 'tkinter', 'nrclex', 'numpy', 'matplotlib', 'pandas', 'stanza']) == False:
+if (
+    IO_libraries_util.install_all_Python_packages(
+        GUI_util.window,
+        "character_emotion_arcs_util",
+        ["os", "csv", "tkinter", "nrclex", "numpy", "matplotlib", "pandas", "stanza"],
+    )
+    == False
+):
     sys.exit(0)
 
-import os
 import csv
-import math
-import numpy as np
-import pandas as pd
+import os
 import tkinter.messagebox as mb
-import matplotlib.pyplot as plt
+
 import matplotlib.patches as mpatches
-from collections import defaultdict
+import matplotlib.pyplot as plt
 from nrclex import NRCLex
+import pandas as pd
 
 import IO_csv_util
 import IO_files_util
 import IO_user_interface_util
-import charts_util
 
-EIGHT_EMOTIONS = ["anger", "anticipation", "disgust", "fear",
-                   "joy", "sadness", "surprise", "trust"]
+EIGHT_EMOTIONS = ["anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust"]
 
 NRC_COLORS = {
-    "anger":        "#E24B4A",
+    "anger": "#E24B4A",
     "anticipation": "#BA7517",
-    "disgust":      "#D4537E",
-    "fear":         "#1D9E75",
-    "joy":          "#F9CB42",
-    "sadness":      "#534AB7",
-    "surprise":     "#378ADD",
-    "trust":        "#639922",
+    "disgust": "#D4537E",
+    "fear": "#1D9E75",
+    "joy": "#F9CB42",
+    "sadness": "#534AB7",
+    "surprise": "#378ADD",
+    "trust": "#639922",
 }
 
 
@@ -42,9 +45,9 @@ def _score_sentence_nrc(text):
     # NRCLex API drift: older versions expose .raw_emotion_scores (counts); some newer builds only
     # populate .affect_frequencies (normalized). Fall back so a version mismatch doesn't crash the
     # character emotion arcs -- either is fine here since we re-normalize over the 8 emotions below.
-    raw = getattr(emotion_obj, 'raw_emotion_scores', None)
+    raw = getattr(emotion_obj, "raw_emotion_scores", None)
     if not raw:
-        raw = getattr(emotion_obj, 'affect_frequencies', None) or {}
+        raw = getattr(emotion_obj, "affect_frequencies", None) or {}
     total = sum(raw.get(e, 0) for e in EIGHT_EMOTIONS) or 1
     return {e: raw.get(e, 0) / total for e in EIGHT_EMOTIONS}
 
@@ -70,7 +73,7 @@ def _normalize_character_name(name, canonical_map):
 
 
 def analyze_file(filepath, nlp_pipeline, doc_id):
-    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+    with open(filepath, encoding="utf-8", errors="ignore") as f:
         text = f.read()
     if not text.strip():
         return []
@@ -93,11 +96,11 @@ def analyze_file(filepath, nlp_pipeline, doc_id):
 
         for character in normalized_persons:
             row = {
-                'Document ID': doc_id,
-                'Document': IO_csv_util.dressFilenameForCSVHyperlink(filepath),
-                'Sentence ID': sent_idx,
-                'Sentence': sent_text,
-                'Character': character,
+                "Document ID": doc_id,
+                "Document": IO_csv_util.dressFilenameForCSVHyperlink(filepath),
+                "Sentence ID": sent_idx,
+                "Sentence": sent_text,
+                "Character": character,
             }
             for e in EIGHT_EMOTIONS:
                 row[e.capitalize()] = round(scores[e], 4)
@@ -114,37 +117,38 @@ def analyze_conll_table(conll_path):
     emotion scores; character-name normalization is per document, exactly as analyze_file does it. Returns
     [] if the table lacks the needed columns (the caller then parses)."""
     import pandas as pd
-    df = pd.read_csv(conll_path, encoding='utf-8', on_bad_lines='skip')
-    formcol = 'Form' if 'Form' in df.columns else ('Word' if 'Word' in df.columns else None)
-    if not formcol or not {'NER', 'Sentence ID', 'Document ID'}.issubset(df.columns):
+
+    df = pd.read_csv(conll_path, encoding="utf-8", on_bad_lines="skip")
+    formcol = "Form" if "Form" in df.columns else ("Word" if "Word" in df.columns else None)
+    if not formcol or not {"NER", "Sentence ID", "Document ID"}.issubset(df.columns):
         return []
-    has_mwe = 'Multi-Word Expression' in df.columns
-    has_doc = 'Document' in df.columns
+    has_mwe = "Multi-Word Expression" in df.columns
+    has_doc = "Document" in df.columns
     rows = []
-    for doc_id, doc_g in df.groupby('Document ID', sort=True):
-        canonical_map = {}   # per-document, like analyze_file
-        doc_link = doc_g['Document'].iloc[0] if has_doc else ''
-        for sent_id, g in doc_g.groupby('Sentence ID', sort=True):
-            forms = [str(x) for x in g[formcol].tolist() if str(x) != 'nan']
-            sent_text = ' '.join(forms)
+    for doc_id, doc_g in df.groupby("Document ID", sort=True):
+        canonical_map = {}  # per-document, like analyze_file
+        doc_link = doc_g["Document"].iloc[0] if has_doc else ""
+        for sent_id, g in doc_g.groupby("Sentence ID", sort=True):
+            forms = [str(x) for x in g[formcol].tolist() if str(x) != "nan"]
+            sent_text = " ".join(forms)
             # PERSON entities: the Multi-Word Expression column holds the full name (e.g. 'Harry Potter'
             # for both its tokens); fall back to the token Form. Same set semantics as
             # _extract_persons_from_sentence(sent) over sent.ents of type PERSON.
             persons = set()
-            for _, r in g[g['NER'].astype(str).str.contains('PERSON', na=False)].iterrows():
-                mwe = str(r['Multi-Word Expression']) if has_mwe else ''
-                name = (mwe if mwe and mwe.lower() != 'nan' else str(r[formcol])).strip()
-                if name and name.lower() != 'nan':
+            for _, r in g[g["NER"].astype(str).str.contains("PERSON", na=False)].iterrows():
+                mwe = str(r["Multi-Word Expression"]) if has_mwe else ""
+                name = (mwe if mwe and mwe.lower() != "nan" else str(r[formcol])).strip()
+                if name and name.lower() != "nan":
                     persons.add(name)
             scores = _score_sentence_nrc(sent_text)
             normalized = {_normalize_character_name(p, canonical_map) for p in persons} or {"_NARRATOR/UNATTRIBUTED_"}
             for character in normalized:
                 row = {
-                    'Document ID': int(doc_id) if str(doc_id).isdigit() else doc_id,
-                    'Document': doc_link,
-                    'Sentence ID': int(sent_id) if str(sent_id).isdigit() else sent_id,
-                    'Sentence': sent_text,
-                    'Character': character,
+                    "Document ID": int(doc_id) if str(doc_id).isdigit() else doc_id,
+                    "Document": doc_link,
+                    "Sentence ID": int(sent_id) if str(sent_id).isdigit() else sent_id,
+                    "Sentence": sent_text,
+                    "Character": character,
                 }
                 for e in EIGHT_EMOTIONS:
                     row[e.capitalize()] = round(scores[e], 4)
@@ -153,8 +157,8 @@ def analyze_conll_table(conll_path):
 
 
 def plot_character_arcs(df, character, outputDir, base_name, window_size=5):
-    char_df = df[df['Character'] == character].copy()
-    char_df = char_df.sort_values('Sentence ID').reset_index(drop=True)
+    char_df = df[df["Character"] == character].copy()
+    char_df = char_df.sort_values("Sentence ID").reset_index(drop=True)
 
     if len(char_df) < 2:
         return []
@@ -169,20 +173,26 @@ def plot_character_arcs(df, character, outputDir, base_name, window_size=5):
             smoothed = pd.Series(values).rolling(window=window_size, center=True, min_periods=1).mean().values
         else:
             smoothed = values
-        ax.plot(range(len(smoothed)), smoothed, label=emotion.capitalize(),
-                color=NRC_COLORS[emotion], linewidth=1.8, alpha=0.85)
+        ax.plot(
+            range(len(smoothed)),
+            smoothed,
+            label=emotion.capitalize(),
+            color=NRC_COLORS[emotion],
+            linewidth=1.8,
+            alpha=0.85,
+        )
 
-    ax.set_xlabel('Narrative Position (sentence)', fontsize=11)
-    ax.set_ylabel('Emotion Intensity', fontsize=11)
-    safe_char = character.replace('/', '_').replace('\\', '_').replace(' ', '_')[:30]
-    ax.set_title(f'Emotion Arc — {character}\n({base_name})', fontsize=13)
-    ax.legend(loc='upper right', fontsize=8, ncol=2)
+    ax.set_xlabel("Narrative Position (sentence)", fontsize=11)
+    ax.set_ylabel("Emotion Intensity", fontsize=11)
+    safe_char = character.replace("/", "_").replace("\\", "_").replace(" ", "_")[:30]
+    ax.set_title(f"Emotion Arc — {character}\n({base_name})", fontsize=13)
+    ax.legend(loc="upper right", fontsize=8, ncol=2)
     ax.set_ylim(bottom=0)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
 
-    arc_file = os.path.join(outputDir, f'emotion_arc_{safe_char}.png')
-    plt.savefig(arc_file, dpi=150, bbox_inches='tight')
+    arc_file = os.path.join(outputDir, f"emotion_arc_{safe_char}.png")
+    plt.savefig(arc_file, dpi=150, bbox_inches="tight")
     plt.close()
     files.append(arc_file)
 
@@ -195,7 +205,7 @@ def plot_character_comparison(df, characters, emotion, outputDir, base_name, win
     colors = plt.cm.tab10.colors
 
     for i, character in enumerate(characters):
-        char_df = df[df['Character'] == character].sort_values('Sentence ID')
+        char_df = df[df["Character"] == character].sort_values("Sentence ID")
         if len(char_df) < 2:
             continue
         values = char_df[col].values
@@ -203,26 +213,25 @@ def plot_character_comparison(df, characters, emotion, outputDir, base_name, win
             smoothed = pd.Series(values).rolling(window=window_size, center=True, min_periods=1).mean().values
         else:
             smoothed = values
-        ax.plot(range(len(smoothed)), smoothed, label=character,
-                color=colors[i % len(colors)], linewidth=1.8)
+        ax.plot(range(len(smoothed)), smoothed, label=character, color=colors[i % len(colors)], linewidth=1.8)
 
-    ax.set_xlabel('Narrative Position (sentence)', fontsize=11)
-    ax.set_ylabel(f'{col} Intensity', fontsize=11)
-    ax.set_title(f'{col} Arc — Character Comparison\n({base_name})', fontsize=13)
-    ax.legend(loc='upper right', fontsize=9)
+    ax.set_xlabel("Narrative Position (sentence)", fontsize=11)
+    ax.set_ylabel(f"{col} Intensity", fontsize=11)
+    ax.set_title(f"{col} Arc — Character Comparison\n({base_name})", fontsize=13)
+    ax.legend(loc="upper right", fontsize=9)
     ax.set_ylim(bottom=0)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
 
-    safe_emo = emotion.replace(' ', '_')
-    out_file = os.path.join(outputDir, f'character_comparison_{safe_emo}.png')
-    plt.savefig(out_file, dpi=150, bbox_inches='tight')
+    safe_emo = emotion.replace(" ", "_")
+    out_file = os.path.join(outputDir, f"character_comparison_{safe_emo}.png")
+    plt.savefig(out_file, dpi=150, bbox_inches="tight")
     plt.close()
     return out_file
 
 
 def plot_dominant_emotion_timeline(df, character, outputDir, base_name):
-    char_df = df[df['Character'] == character].sort_values('Sentence ID').reset_index(drop=True)
+    char_df = df[df["Character"] == character].sort_values("Sentence ID").reset_index(drop=True)
     if len(char_df) < 2:
         return None
 
@@ -233,81 +242,93 @@ def plot_dominant_emotion_timeline(df, character, outputDir, base_name):
     color_map = {e.capitalize(): NRC_COLORS[e] for e in EIGHT_EMOTIONS}
 
     for i, emo in enumerate(dominant):
-        ax.barh(0, 1, left=i, color=color_map.get(emo, '#999999'), edgecolor='none')
+        ax.barh(0, 1, left=i, color=color_map.get(emo, "#999999"), edgecolor="none")
 
     ax.set_xlim(0, len(dominant))
     ax.set_yticks([])
-    ax.set_xlabel('Narrative Position (sentence)', fontsize=10)
-    safe_char = character.replace('/', '_').replace('\\', '_').replace(' ', '_')[:30]
-    ax.set_title(f'Dominant Emotion Timeline — {character} ({base_name})', fontsize=12)
+    ax.set_xlabel("Narrative Position (sentence)", fontsize=10)
+    safe_char = character.replace("/", "_").replace("\\", "_").replace(" ", "_")[:30]
+    ax.set_title(f"Dominant Emotion Timeline — {character} ({base_name})", fontsize=12)
 
     patches = [mpatches.Patch(color=NRC_COLORS[e], label=e.capitalize()) for e in EIGHT_EMOTIONS]
-    ax.legend(handles=patches, loc='upper center', bbox_to_anchor=(0.5, -0.25),
-              ncol=4, fontsize=8)
+    ax.legend(handles=patches, loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8)
 
     plt.tight_layout()
-    out_file = os.path.join(outputDir, f'dominant_emotion_timeline_{safe_char}.png')
-    plt.savefig(out_file, dpi=150, bbox_inches='tight')
+    out_file = os.path.join(outputDir, f"dominant_emotion_timeline_{safe_char}.png")
+    plt.savefig(out_file, dpi=150, bbox_inches="tight")
     plt.close()
     return out_file
 
 
-def main(inputFilename, inputDir, outputDir, chartPackage='Excel',
-         dataTransformation='No transformation', min_sentences=5, top_n_characters=5,
-         window_size=5, conll_ner_table=None):
+def main(
+    inputFilename,
+    inputDir,
+    outputDir,
+    chartPackage="Excel",
+    dataTransformation="No transformation",
+    min_sentences=5,
+    top_n_characters=5,
+    window_size=5,
+    conll_ner_table=None,
+):
 
     filesToOpen = []
 
-    outputDir = IO_files_util.make_output_subdirectory(inputFilename, inputDir, outputDir,
-                                                        label='character_emotion_arcs', silent=True)
-    if outputDir == '':
+    outputDir = IO_files_util.make_output_subdirectory(
+        inputFilename, inputDir, outputDir, label="character_emotion_arcs", silent=True
+    )
+    if outputDir == "":
         return filesToOpen
 
-    startTime = IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start',
-                                                    'Started running Character Emotion Arcs at', True)
+    startTime = IO_user_interface_util.timed_alert(
+        GUI_util.window, 2000, "Analysis start", "Started running Character Emotion Arcs at", True
+    )
 
-    outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir,
-                                                              '.csv', 'character_emotion_arcs',
-                                                              '', '', '', '', False, True)
+    outputFilename = IO_files_util.generate_output_file_name(
+        inputFilename, inputDir, outputDir, ".csv", "character_emotion_arcs", "", "", "", "", False, True
+    )
 
-    fieldnames = ['Document ID', 'Document', 'Sentence ID', 'Sentence', 'Character'] + \
-                 [e.capitalize() for e in EIGHT_EMOTIONS]
+    fieldnames = ["Document ID", "Document", "Sentence ID", "Sentence", "Character"] + [
+        e.capitalize() for e in EIGHT_EMOTIONS
+    ]
 
     all_rows = []
     # REUSE: when the caller (Corpus Profiler) hands us a Stanza NER CoNLL table it already produced, DERIVE
     # characters + sentences from it -- no re-parse. This pass otherwise builds its OWN Stanza NER pipeline
     # and re-parses the whole corpus (~1.5h on Harry Potter). Falls back to parsing when no table is given.
     if conll_ner_table:
-        print('>>> Character Emotion Arcs: derived from an existing Stanza NER table (%s) -- no re-parse'
-              % os.path.basename(conll_ner_table))
+        print(
+            ">>> Character Emotion Arcs: derived from an existing Stanza NER table (%s) -- no re-parse"
+            % os.path.basename(conll_ner_table)
+        )
         try:
             all_rows = analyze_conll_table(conll_ner_table)
         except Exception as e:
-            print('Character Emotion Arcs: could not derive from the NER table (%s); parsing instead' % e)
+            print("Character Emotion Arcs: could not derive from the NER table (%s); parsing instead" % e)
             all_rows = []
 
     if not all_rows:
         import stanza
+
         try:
-            nlp = stanza.Pipeline(lang='en', processors='tokenize,ner', use_gpu=False)
+            nlp = stanza.Pipeline(lang="en", processors="tokenize,ner", use_gpu=False)
         except Exception as e:
-            mb.showerror(title='Stanza Error',
-                         message=f'Could not initialize Stanza NER pipeline.\n\n{str(e)}')
+            mb.showerror(title="Stanza Error", message=f"Could not initialize Stanza NER pipeline.\n\n{str(e)}")
             return filesToOpen
         if inputFilename and os.path.exists(inputFilename):
             print("Processing file 1/1 " + os.path.basename(inputFilename))
             all_rows = analyze_file(inputFilename, nlp, 1)
         elif inputDir and os.path.isdir(inputDir):
-            txt_files = sorted([f for f in os.listdir(inputDir) if f.endswith('.txt')])
+            txt_files = sorted([f for f in os.listdir(inputDir) if f.endswith(".txt")])
             for doc_id, file in enumerate(txt_files, 1):
-                print("Processing file " + str(doc_id) + "/" + str(len(txt_files)) + ' ' + file)
+                print("Processing file " + str(doc_id) + "/" + str(len(txt_files)) + " " + file)
                 all_rows.extend(analyze_file(os.path.join(inputDir, file), nlp, doc_id))
 
     if not all_rows:
-        mb.showwarning(title='No data', message='No text data found to analyze.')
+        mb.showwarning(title="No data", message="No text data found to analyze.")
         return filesToOpen
 
-    with open(outputFilename, 'w', encoding='utf-8', errors='ignore', newline='') as csvfile:
+    with open(outputFilename, "w", encoding="utf-8", errors="ignore", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(all_rows)
@@ -315,8 +336,8 @@ def main(inputFilename, inputDir, outputDir, chartPackage='Excel',
 
     df = pd.read_csv(outputFilename)
 
-    named_chars = df[df['Character'] != '_NARRATOR/UNATTRIBUTED_']
-    char_counts = named_chars.groupby('Character')['Sentence ID'].count()
+    named_chars = df[df["Character"] != "_NARRATOR/UNATTRIBUTED_"]
+    char_counts = named_chars.groupby("Character")["Sentence ID"].count()
     eligible = char_counts[char_counts >= min_sentences]
     top_characters = eligible.nlargest(top_n_characters).index.tolist()
 
@@ -334,28 +355,28 @@ def main(inputFilename, inputDir, outputDir, chartPackage='Excel',
             filesToOpen.append(timeline_file)
 
     if len(top_characters) >= 2:
-        for emotion in ['joy', 'anger', 'fear', 'sadness']:
-            comp_file = plot_character_comparison(df, top_characters, emotion, outputDir,
-                                                   base_name, window_size)
+        for emotion in ["joy", "anger", "fear", "sadness"]:
+            comp_file = plot_character_comparison(df, top_characters, emotion, outputDir, base_name, window_size)
             filesToOpen.append(comp_file)
 
-    summary_file = os.path.join(outputDir, f'character_emotion_summary_{base_name}.csv')
+    summary_file = os.path.join(outputDir, f"character_emotion_summary_{base_name}.csv")
     summary_rows = []
     for character in top_characters:
-        char_df = df[df['Character'] == character]
-        row = {'Character': character, 'Sentences': len(char_df)}
+        char_df = df[df["Character"] == character]
+        row = {"Character": character, "Sentences": len(char_df)}
         for e in EIGHT_EMOTIONS:
-            row[f'Avg {e.capitalize()}'] = round(char_df[e.capitalize()].mean(), 4)
+            row[f"Avg {e.capitalize()}"] = round(char_df[e.capitalize()].mean(), 4)
         emotion_cols = [e.capitalize() for e in EIGHT_EMOTIONS]
         avg_vals = {e: char_df[e].mean() for e in emotion_cols}
-        row['Dominant Emotion'] = max(avg_vals, key=avg_vals.get)
+        row["Dominant Emotion"] = max(avg_vals, key=avg_vals.get)
         summary_rows.append(row)
 
     summary_df = pd.DataFrame(summary_rows)
-    summary_df.to_csv(summary_file, index=False, encoding='utf-8')
+    summary_df.to_csv(summary_file, index=False, encoding="utf-8")
     filesToOpen.append(summary_file)
 
-    IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis end',
-                                        'Finished running Character Emotion Arcs at', True, '', True, startTime)
+    IO_user_interface_util.timed_alert(
+        GUI_util.window, 2000, "Analysis end", "Finished running Character Emotion Arcs at", True, "", True, startTime
+    )
 
     return filesToOpen

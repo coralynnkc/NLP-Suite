@@ -1,20 +1,21 @@
 # written by Mino Cha March 2022
 # class for Tree nodes
 class Node:
-    def __init__(self,start):
+    def __init__(self, start):
         self.start = start
         self.children = []
-        self.text = ''
+        self.text = ""
 
-# make a tree        
+
+# make a tree
 def make_tree(s):
     stack = []
     nodes = []
     cur = None
-    root = None    
+    root = None
 
     for i, c in enumerate(s):
-        if c == '(':
+        if c == "(":
             cur = Node(i)
             if stack:
                 stack[-1].children.append(cur)
@@ -23,13 +24,14 @@ def make_tree(s):
             if root is None:
                 root = cur
 
-        elif c == ')' and stack:
+        elif c == ")" and stack:
             topnode = stack.pop()
 
-            text = s[topnode.start + 1: i]
+            text = s[topnode.start + 1 : i]
             topnode.text = text
 
     return root
+
 
 # list of leaves
 def getLeavesAsList(node):
@@ -41,6 +43,7 @@ def getLeavesAsList(node):
 
     return result
 
+
 # list of children
 def getChildrenAsList(node):
     result = []
@@ -50,4 +53,3 @@ def getChildrenAsList(node):
         return [node]
 
     return result
-

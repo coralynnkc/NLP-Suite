@@ -38,13 +38,13 @@ if os.environ.get("NLP_SUITE_SKIP_PACKAGE_CHECKS") == "1":
     # tensorflow-macos as present so the check passes silently.
     # (This mirrors what the pip shim in Launch NLP Suite (Mac).command does.)
     import subprocess as _subprocess
+
     _real_check_output = _subprocess.check_output
 
     def _check_output_shim(cmd, *args, **kwargs):
         try:
             cmd_list = list(cmd) if not isinstance(cmd, str) else cmd.split()
-            if (any("pip" in str(c) for c in cmd_list)
-                    and any(c == "freeze" for c in cmd_list)):
+            if any("pip" in str(c) for c in cmd_list) and any(c == "freeze" for c in cmd_list):
                 return b"tensorflow-macos==2.12.0\n"
         except Exception:
             pass
