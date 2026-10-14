@@ -6,6 +6,7 @@ if IO_libraries_util.install_all_Python_packages(GUI_util.window, "GIS_folium_ut
                                                   ['os', 'pandas', 'folium']) == False:
     sys.exit(0)
 
+import html
 import os
 import pandas as pd
 import folium
@@ -14,6 +15,9 @@ import tkinter.messagebox as mb
 
 import IO_files_util
 import IO_user_interface_util
+# Esri tiles: OpenStreetMap refuses a map page opened from disk (map_tiles_util)
+import map_tiles_util
+import folium_time_slider_util
 
 
 def _load_geocoded_data(inputFilename):
@@ -89,6 +93,13 @@ def _build_popup_html(row, df_columns, location_col=None, max_text_len=200):
         if col == 'Date':
             val_str = val.strftime('%Y-%m-%d') if hasattr(val, 'strftime') else val_str.split(' ')[0]
 
+        # A web address (e.g. the archive's record link) is a clickable link, never cut:
+        # a truncated address does not open
+        if val_str.startswith(('http://', 'https://')):
+            href = html.escape(val_str, quote=True)
+            parts.append(f'<b>{col}</b>: <a href="{href}" target="_blank">open</a>')
+            continue
+
         # Truncate long text fields (e.g. Sentence)
         if len(val_str) > max_text_len:
             val_str = val_str[:max_text_len] + '...'
@@ -108,7 +119,7 @@ def create_folium_pin_map(window, inputFilename, outputDir, locationColumnName='
         return ''
 
     center = _compute_center(df)
-    m = folium.Map(location=center, zoom_start=4, tiles='OpenStreetMap')
+    m = folium.Map(location=center, zoom_start=4, **map_tiles_util.folium_tiles())
 
     location_col = locationColumnName if locationColumnName in df.columns else None
     popup_columns = [c for c in df.columns]
@@ -154,7 +165,7 @@ def create_folium_heatmap(window, inputFilename, outputDir, locationColumnName='
         return ''
 
     center = _compute_center(df)
-    m = folium.Map(location=center, zoom_start=4, tiles='OpenStreetMap')
+    m = folium.Map(location=center, zoom_start=4, **map_tiles_util.folium_tiles())
 
     heat_data = df[['Latitude', 'Longitude']].values.tolist()
 
@@ -199,7 +210,9 @@ def create_folium_timestamped_map(window, inputFilename, outputDir,
                        '\n\ncontains no valid rows with dates for the Folium timestamped map.')
         return ''
 
-    df[dateColumnName] = pd.to_datetime(df[dateColumnName], errors='coerce')
+    # a bare year (1870) is a year, not 1,870 nanoseconds after 1970 - see date_text
+    df[dateColumnName] = pd.to_datetime(df[dateColumnName].map(folium_time_slider_util.date_text),
+                                        errors='coerce')
     df = df.dropna(subset=[dateColumnName])
     if len(df) == 0:
         mb.showwarning('Warning',
@@ -245,7 +258,7 @@ def create_folium_timestamped_map(window, inputFilename, outputDir,
         features.append(feature)
 
     center = _compute_center(df)
-    m = folium.Map(location=center, zoom_start=4, tiles='OpenStreetMap')
+    m = folium.Map(location=center, zoom_start=4, **map_tiles_util.folium_tiles())
 
     # place the time-slider control in the TOP-LEFT corner (like Google Earth Pro's time slider).
     # folium's TimestampedGeoJson does not expose a position option; the control defaults to the
@@ -256,15 +269,21 @@ def create_folium_timestamped_map(window, inputFilename, outputDir,
         ".leaflet-bottom.leaflet-left .leaflet-control-timecontrol{margin-bottom:0;}"
         "</style>"))
 
+    # THE STEP IS CHOSEN FROM THE DATA (a year, a month or a day) and the slider is
+    # given its stops after saving - see folium_time_slider_util for why the play
+    # button otherwise does nothing and records before 1970 are never drawn.
+    first = df[dateColumnName].min().to_pydatetime()
+    last = df[dateColumnName].max().to_pydatetime()
+    period = folium_time_slider_util.period_for(first, last)
     TimestampedGeoJson(
         {'type': 'FeatureCollection', 'features': features},
-        period='P1D',
+        period=period,
         add_last_point=True,
         auto_play=False,
         loop=False,
         max_speed=10,
         loop_button=True,
-        date_options='YYYY-MM-DD',
+        date_options=folium_time_slider_util.date_format(period),
         time_slider_drag_update=True,
     ).add_to(m)
 
@@ -273,6 +292,13 @@ def create_folium_timestamped_map(window, inputFilename, outputDir,
                                                               'Folium-time', locationColumnName, '', '',
                                                               False, True)
     m.save(outputFilename)
+    if not folium_time_slider_util.patch_file(
+            outputFilename, folium_time_slider_util.stops(first, last, period)):
+        mb.showwarning('Warning',
+                       'The Folium timestamped map was written, but its time slider could not be '
+                       'set up (folium wrote the page in a form this version does not recognise). '
+                       'The play button may not move and records dated before 1970 may not show.'
+                       '\n\n' + outputFilename)
 
     IO_user_interface_util.timed_alert(window, 2000, 'Folium timestamped map',
                                         'Finished running Folium timestamped map at',

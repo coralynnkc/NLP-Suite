@@ -33,6 +33,8 @@ import os
 import IO_csv_util
 import IO_user_interface_util
 import charts_Plotly_util
+# Esri tiles: OpenStreetMap refuses a map page opened from disk (map_tiles_util)
+import map_tiles_util
 import charts_Excel_util
 import statistics_csv_util
 
@@ -2792,15 +2794,17 @@ edges.forEach(function(e) {{
   origEdgeColors[e.id] = e.color && e.color.color ? e.color.color : '#aaaaaa';
 }});
 function resetAll() {{
+  var nu = [], eu = [];
   nodes.forEach(function(n) {{
     var orig = origNodeProps[n.id] || {{ size: 12, fontSize: 14 }};
-    nodes.update({{ id: n.id, opacity: 1.0, size: orig.size,
+    nu.push({{ id: n.id, opacity: 1.0, size: orig.size,
                     font: {{ size: orig.fontSize, color: '#333' }} }});
   }});
   edges.forEach(function(e) {{
     var oc = origEdgeColors[e.id] || '#aaaaaa';
-    edges.update({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
+    eu.push({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
   }});
+  nodes.update(nu); edges.update(eu);
 }}
 var slider = document.getElementById('time-slider');
 var timeLabel = document.getElementById('time-label');
@@ -2836,15 +2840,16 @@ function applyTimeFilter(idx) {{
   }}
   var cutoff = allDates[idx - 1];
   timeLabel.textContent = cutoff;
+  var nu = [], eu = [];
   nodes.forEach(function(n) {{
     var orig = origNodeProps[n.id] || {{ size: 12, fontSize: 14 }};
     var dates = n.dates || [];
     var visible = dates.length === 0 || dates.some(function(d) {{ return d <= cutoff; }});
     if (visible) {{
-      nodes.update({{ id: n.id, opacity: 1.0, size: orig.size,
+      nu.push({{ id: n.id, opacity: 1.0, size: orig.size,
                       font: {{ size: orig.fontSize, color: '#333' }} }});
     }} else {{
-      nodes.update({{ id: n.id, opacity: 0.05, size: Math.max(4, orig.size * 0.3),
+      nu.push({{ id: n.id, opacity: 0.05, size: Math.max(4, orig.size * 0.3),
                       font: {{ size: 6, color: '#ddd' }} }});
     }}
   }});
@@ -2853,11 +2858,12 @@ function applyTimeFilter(idx) {{
     var visible = dates.length === 0 || dates.some(function(d) {{ return d <= cutoff; }});
     var oc = origEdgeColors[e.id] || '#aaaaaa';
     if (visible) {{
-      edges.update({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
+      eu.push({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
     }} else {{
-      edges.update({{ id: e.id, color: {{ color: '#eee', opacity: 0.03 }} }});
+      eu.push({{ id: e.id, color: {{ color: '#eee', opacity: 0.03 }} }});
     }}
   }});
+  nodes.update(nu); edges.update(eu);
 }}
 var labelToId = {{}};
 nodes.forEach(function(n) {{ labelToId[n.label] = n.id; }});
@@ -2885,24 +2891,26 @@ network.on("click", function(params) {{
       involvedEdgeIds.add(e.id);
     }}
   }});
+  var nu = [], eu = [];
   nodes.forEach(function(n) {{
     var orig = origNodeProps[n.id] || {{ size: 12, fontSize: 14 }};
     if (involvedIds.has(n.id)) {{
-      nodes.update({{ id: n.id, opacity: 1.0, size: orig.size,
+      nu.push({{ id: n.id, opacity: 1.0, size: orig.size,
                       font: {{ size: Math.max(orig.fontSize, 14), color: '#000' }} }});
     }} else {{
-      nodes.update({{ id: n.id, opacity: 0.10, size: Math.max(6, orig.size * 0.5),
+      nu.push({{ id: n.id, opacity: 0.10, size: Math.max(6, orig.size * 0.5),
                       font: {{ size: 8, color: '#ccc' }} }});
     }}
   }});
   edges.forEach(function(e) {{
     var oc = origEdgeColors[e.id] || '#aaaaaa';
     if (involvedEdgeIds.has(e.id)) {{
-      edges.update({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
+      eu.push({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
     }} else {{
-      edges.update({{ id: e.id, color: {{ color: '#eee', opacity: 0.08 }} }});
+      eu.push({{ id: e.id, color: {{ color: '#eee', opacity: 0.08 }} }});
     }}
   }});
+  nodes.update(nu); edges.update(eu);
   if (trips.length === 0) {{
     infoDiv.innerHTML = '<b>' + clickedNode.label + '</b>: no full {no_triplets_msg} tuples.';
     return;
@@ -3608,10 +3616,7 @@ function getFilteredData() {{
 }}
 
 var map = L.map('map').setView([{center_lat}, {center_lon}], 5);
-L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}@2x.png', {{
-  attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-  maxZoom: 18
-}}).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{{z}}/{{y}}/{{x}}', {{attribution: 'Tiles &copy; Esri', maxZoom: 18}}).addTo(map);
 // Fit the view to ALL geocoded points so the markers are never off-screen.
 // A fixed zoom centered on the mean coordinate often lands on empty ocean when the
 // locations are spread across continents, leaving a blank gray map even though markers exist.
@@ -3904,7 +3909,7 @@ def proportional_circle_map(inputFilename, outputDir, location_col, Google_API='
     avg_lat = sum(r[1] for r in geo_rows) / len(geo_rows)
     avg_lon = sum(r[2] for r in geo_rows) / len(geo_rows)
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=4,
-                   tiles='CartoDB positron')
+                   **map_tiles_util.folium_tiles())
     max_count = max(r[3] for r in geo_rows)
     for loc_name, lat, lon, count in geo_rows:
         radius = max(5, (count / max_count) * 40)
@@ -4503,16 +4508,22 @@ var origNodeProps = {{}};
 nodes.forEach(function(n) {{
   origNodeProps[n.id] = {{ size: n.size, fontSize: n.font ? n.font.size : 14 }};
 }});
+var origEdgeColors = {{}};
+edges.forEach(function(e) {{
+  origEdgeColors[e.id] = e.color && e.color.color ? e.color.color : '#aaaaaa';
+}});
 
 function resetAll() {{
+  var nu = [], eu = [];
   nodes.forEach(function(n) {{
     var orig = origNodeProps[n.id] || {{ size: 12, fontSize: 14 }};
-    nodes.update({{ id: n.id, opacity: 1.0, size: orig.size,
+    nu.push({{ id: n.id, opacity: 1.0, size: orig.size,
                     font: {{ size: orig.fontSize, color: '#333' }} }});
   }});
   edges.forEach(function(e) {{
-    edges.update({{ id: e.id, color: {{ color: '#aaaaaa', opacity: 1.0 }} }});
+    eu.push({{ id: e.id, color: {{ color: '#aaaaaa', opacity: 1.0 }} }});
   }});
+  nodes.update(nu); edges.update(eu);
 }}
 
 // ── Time slider logic ──
@@ -4551,15 +4562,16 @@ function applyTimeFilter(idx) {{
   }}
   var cutoff = allDates[idx - 1];
   timeLabel.textContent = cutoff;
+  var nu = [], eu = [];
   nodes.forEach(function(n) {{
     var orig = origNodeProps[n.id] || {{ size: 12, fontSize: 14 }};
     var dates = n.dates || [];
     var visible = dates.length === 0 || dates.some(function(d) {{ return d <= cutoff; }});
     if (visible) {{
-      nodes.update({{ id: n.id, opacity: 1.0, size: orig.size,
+      nu.push({{ id: n.id, opacity: 1.0, size: orig.size,
                       font: {{ size: orig.fontSize, color: '#333' }} }});
     }} else {{
-      nodes.update({{ id: n.id, opacity: 0.05, size: Math.max(4, orig.size * 0.3),
+      nu.push({{ id: n.id, opacity: 0.05, size: Math.max(4, orig.size * 0.3),
                       font: {{ size: 6, color: '#ddd' }} }});
     }}
   }});
@@ -4568,11 +4580,12 @@ function applyTimeFilter(idx) {{
     var visible = dates.length === 0 || dates.some(function(d) {{ return d <= cutoff; }});
     var oc = origEdgeColors[e.id] || '#aaaaaa';
     if (visible) {{
-      edges.update({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
+      eu.push({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
     }} else {{
-      edges.update({{ id: e.id, color: {{ color: '#eee', opacity: 0.03 }} }});
+      eu.push({{ id: e.id, color: {{ color: '#eee', opacity: 0.03 }} }});
     }}
   }});
+  nodes.update(nu); edges.update(eu);
 }}
 
 // Build a lookup: label → id
@@ -4609,24 +4622,26 @@ network.on("click", function(params) {{
   }});
 
   // Dim / highlight — preserve original sizes for highlighted nodes
+  var nu = [], eu = [];
   nodes.forEach(function(n) {{
     var orig = origNodeProps[n.id] || {{ size: 12, fontSize: 14 }};
     if (involvedIds.has(n.id)) {{
-      nodes.update({{ id: n.id, opacity: 1.0, size: orig.size,
+      nu.push({{ id: n.id, opacity: 1.0, size: orig.size,
                       font: {{ size: Math.max(orig.fontSize, 14), color: '#000' }} }});
     }} else {{
-      nodes.update({{ id: n.id, opacity: 0.10, size: Math.max(6, orig.size * 0.5),
+      nu.push({{ id: n.id, opacity: 0.10, size: Math.max(6, orig.size * 0.5),
                       font: {{ size: 8, color: '#ccc' }} }});
     }}
   }});
   edges.forEach(function(e) {{
     var oc = origEdgeColors[e.id] || '#aaaaaa';
     if (involvedEdgeIds.has(e.id)) {{
-      edges.update({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
+      eu.push({{ id: e.id, color: {{ color: oc, opacity: 1.0 }} }});
     }} else {{
-      edges.update({{ id: e.id, color: {{ color: '#eee', opacity: 0.08 }} }});
+      eu.push({{ id: e.id, color: {{ color: '#eee', opacity: 0.08 }} }});
     }}
   }});
+  nodes.update(nu); edges.update(eu);
 
   // Build info table showing full role tuples
   if (trips.length === 0) {{
@@ -4989,7 +5004,7 @@ network.on("click", function(params) {{
                 avg_lat = sum(r[1] for r in geo_rows) / len(geo_rows)
                 avg_lon = sum(r[2] for r in geo_rows) / len(geo_rows)
                 m = folium.Map(location=[avg_lat, avg_lon], zoom_start=4,
-                               tiles='CartoDB positron')
+                               **map_tiles_util.folium_tiles())
                 max_count = max(r[3] for r in geo_rows)
                 for loc_name, lat, lon, count in geo_rows:
                     radius = max(5, (count / max_count) * 40)
