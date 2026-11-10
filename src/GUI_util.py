@@ -121,8 +121,6 @@ import IO_files_util
 import IO_internet_util
 import reminders_util
 import run_script_util
-
-# import videos_util
 import TIPS_util
 import usage_util
 
@@ -2135,17 +2133,6 @@ def setup_parsers_annotators(y_multiplier_integer, scriptName):
         document_length_var,
         limit_sentence_length_var,
     )
-
-
-# Watching video inside the NLP Suite but vlc and pafy gives loads of problems
-# def watch_video(*args):
-#     if videos_lookup == {''} or len(videos_dropdown_field.get()) == 'No videos available':
-#         mb.showinfo(title='videos Warning', message="There are no videos available for this GUI.")
-#         return
-#     if videos_dropdown_field.get() != 'Watch videos':
-#         if not IO_internet_util.check_internet_availability_warning(scriptName):
-#             return
-#         # videos_util.get_video(videos_dropdown_field.get(), videos_lookup)
 
 
 # the video names are set in each GUI with these commands

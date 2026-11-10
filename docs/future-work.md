@@ -26,17 +26,9 @@ Moved out of PLAN.md on 11 Nov 2026. The sections keep their scan dates; nothing
 
 **How it was found:** every `src/*.py` whose module name appears nowhere else in `src/`, `tests/`, `lib/`, the specs, the workflows or the setup scripts (`grep -w`), plus the §5.1 findings. A mention in a comment counts as a use, so the list is short of complete (`videos_util` was found only by reading). Not swept: dead functions and branches inside live modules (§12.7 counts 496 unused variables); `lib/` data files; TIPS pdfs no GUI names.
 
-### 1.1 The rest of PR #1706 (1.6.48, needs Roberto's yes)
+### 1.1 Kept from #1706
 
-1.6.47 (23 Nov) deleted the legacy setup scripts, `src/requirements*.txt` and moved the Windows icon to `lib/images/` (#1800). What is below is the rest of #1706, held while it was unclear whether the family viewer needed any of it. It does not (23 Nov): the viewer (`family_archive_app.py`, `gedcom_to_csv.py`) moved to a private repo on 16 Jun 2026 (`d6bcf213`) and imported only pandas, geopy and the standard library; `build-family-viewer.yml` builds `FamilyArchiveViewer.spec` and `GedcomConverter.spec`, which left the repo with it. Rebase #1706 on `roberto` and drop what is already gone. Each file below was checked: nothing imports it, launches it with `run_script`, or names it in a workflow.
-
-| Group | Files | Evidence |
-|---|---|---|
-| PC-ACE debugging scripts (June 2026) | `src/_add_indexes.py`, `_add_indexes_now.py`, `_check_idx.py`, `_check_path.py`, `_debug_hops.py`, `_debug_xref.py`, `_test_actor_process.py`, `_test_cross_join.py` | One-off scripts with a hard-coded `C:/Users/rfranzo/Desktop/...sqlite` path; imported nowhere |
-| Unused modules | `GIS_heatMapIntegration.py`, `GIS_heatMapintegration_ver2.py`, `html_annotator_extractor_util_NEW.py`, `knowledge_graphs_DBpedia_util_SPARQL.py` (440 lines), `nyt_api_call.py`, `TensorFlow_semantic_analysis.py`, `POTUS_webscraper.py` (2023), `pandas_compat_util.py`, `videos_util.py`, `NLP_setup_download_jars.py` | Imported nowhere. `pandas_compat_util` (July 2026) is a shim for pandas < 1.3 that nothing ever adopted; pandas 2 is pinned. `videos_util` is imported only in commented-out lines (`GUI_util`, `NLP_welcome_main`); `NLP_setup_download_jars` was named only in the old spec's hidden imports |
-| Repo root and workflows | `post_build_fixup.py`, `wiki-draft-About.md`, `.github/workflows/build-family-viewer.yml` | §5.1 #14. The spec mentions `post_build_fixup` only in a comment |
-
-**Checks for the PR:** rerun the grep on the final tree; `pytest tests/`; `tests/gui_smoke.py`; `bundle_gate.py` (some names were in the spec's hidden imports); CHANGELOG: one line ("Removed unused files; nothing a tool uses changed").
+#1706 (1.6.48) deleted the files §1.1 listed except `post_build_fixup.py`: `NLP_Suite.spec` names it as the local-build counterpart of the workflow's "Copy data directories to dist" step, and it patches `python-env/bin` shebangs (`194365c5`). It is not dead while anyone builds locally. Delete it only together with a note in the spec on how to build locally without it.
 
 ### 1.2 Looks dead, is not
 
@@ -68,7 +60,7 @@ The PyInstaller executable runs only the menu; every tool runs on `python-env`. 
 
 - `umap-learn`, `hdbscan`: not imported, but BERTopic depends on them; keep.
 - `lib/namesGender` (34 MB of CSV) compresses well in the zip already; leave it.
-- PR #1706's deletions and a §1.3 `vulture` pass are cleanup, not size.
+- A §1.3 `vulture` pass is cleanup, not size.
 
 ### 2.5 The checks
 
@@ -132,7 +124,7 @@ Deletions and behaviour changes. Each is ready to do once decided.
 | 11 | `parsers_annotators_main` | Two unreachable "select Stanford CoreNLP as your default package" branches (300–313, 395–408); "Open coreference GUI" checkbox is read and never used; Word2Vec item never matches its own label; coreference item says "via spaCy" (coreferee is gone); Stanza constituency says "not available yet" though Setup offers it | One PR for the annotator menu |
 | 12 | Open-GUI launchers that use `sys.executable` | `DB_PCACE_data_analysis_main`, `DB_PCACE_data_validation_main`, `DB_SQL_main` (frozen: that is the app, not Python); `corpus_checker_PCACE_data_main` runs `sudo Python X_main.py` on a Mac and launches `WordNet.py`, which does not exist | Use `run_script_util` everywhere |
 | 13 | TIPS menu | "pip install & Anaconda environments", "Python: download, install, run", "Anaconda & pip useful commands" are second in the main TIPS list | Move to the end as developer TIPS, or remove. The pdfs themselves, and the Java / CoreNLP / MALLET install TIPS and "Topic modeling and corpus size", need a read |
-| 14 | Dead files | `videos_util.py` (pafy/vlc, imported nowhere), `NLP_setup_download_jars.py`, `knowledge_graphs_DBpedia_util_SPARQL.py`, `nyt_api_call.py`, `html_annotator_extractor_util_NEW.py`, `TensorFlow_semantic_analysis.py`, `GIS_heatMapIntegration.py`, `GIS_heatMapintegration_ver2.py`, `post_build_fixup.py`, `wiki-draft-About.md`, `.github/workflows/build-family-viewer.yml` (its spec files are not in the repo) | **1.6.48, §1.1.** |
+| 14 | Dead files | Deleted by #1706 (1.6.48), except `post_build_fixup.py` (§1.1) | Done |
 | 16 | Reminders | 51 titles are in `reminders.csv` twice, under a GUI and under `*`. Popups read only the `*` row, the dropdown toggles the GUI row, so switching a reminder off there does nothing. About 12 definitions in `reminders_util` are used nowhere (Java 64-bit `-d64`, "CoreNLP Server is shutting down", tkinter Mac bug, SVO/WordNet/MALLET/Google Earth "system requirements") | Delete the per-GUI duplicates and the unused definitions |
 | 18 | wordclouds | Menu offers Wordle (site gone) and Tagxedo (needs Silverlight); "Tagul" is now WordArt; Python WordCloud asks for internet though it needs none | Remove the two, rename the third, drop the check |
 | 19 | `MEMO_Development_Notes.md`, `docs/CustomTkinter-Migration-Plan.md` | June 2026 history (Python 3.8 build, Mac Intel CI, files since deleted); a plan that names `setup-app/` and says installers build from `roberto` | A "historical" banner on each, or delete |
@@ -327,7 +319,6 @@ Reviewed 9 Nov 2026. The older PRs conflict only because v1.6.40 reformatted all
 
 | PR | Opened | What | Merge | Tests | Release | Review |
 |---|---|---|---|---|---|---|
-| #1706 | 11-10 | The rest of the dead files (§1.1); its legacy-setup part shipped in 1.6.47 (#1800) | Conflicts: rebase and drop the files #1800 deleted | — | 1.6.48, if Roberto agrees | The pre-tag build and `bundle_gate.py` are its test |
 | #1682 | 10-16 | spaCy CoNLL ID/HEAD sentence-level and 1-based | Conflict: ruff only, mechanical | 2 pass | Later (shared structure) | Correct: Stanza and CoreNLP already write 1-based, sentence-level, root 0, and no reader compensates for spaCy's old values. Shared structure, so not in a release about the updater. spaCy tables already on disk stay 0-based: say "re-parse" in the CHANGELOG |
 | #1683 | 10-16 | Gender dictionary looks up only PERSON tokens | Conflict: ruff only | 5 pass | No | **Needs changes:** hardcodes `Stanford_CoreNLP_util.CoreNLP_annotate` whatever parser is configured (so the option now needs Java); returns `''` with no message when no NER csv comes back; once "Will" is a PERSON anywhere, every "will" is tagged |
 | #1528 | 2024-09 | "dictionary functionality" (CallaGong) | — | — | No | **Close**: targets `current-stable`, 2 years old |
@@ -441,7 +432,7 @@ Head branches of merged PRs are deleted automatically (repo setting since 18 Nov
 - `mac-font-pin` (22 Jul 2026): not in `roberto`, no open PR. Check whether it's still needed.
 - `dictionary` (Sep 2024), `taeeun` (Dec 2024): heads of stale PRs #1528 and #1525. Delete after those PRs are closed.
 - `remove_shortcut_prompt` (2021), `tony` (2023): no open PR. Delete candidates.
-- Cora's, open work: `chore/remove-dead-files` (#1706). The 1.6.43 spike branches and the 1.6.44 backup were deleted on 23 Nov.
+- Cora's, open work: the 1.6.48 candidate (`release/v1.6.48`, PLAN) and 1.6.49 (`chore/tcl9-trace-add`, `chore/1.6.49-python-3.11.18`). The 1.6.43 spike branches and the 1.6.44 backup were deleted on 23 Nov.
 
 Deleting someone else's remote branch is Roberto's call.
 

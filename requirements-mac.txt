@@ -1,6 +1,5 @@
 # macOS-only Python dependencies (installed in addition to requirements.txt).
 # pexpect and ptyprocess: IPython's terminal dependencies on macOS (IPython is in requirements.txt).
-# pafy and python-vlc are no longer installed: they played the help videos in videos_util, which nothing imports
-# (the help videos open in the browser).
+# pafy and python-vlc are no longer installed: the help videos open in the browser.
 pexpect
 ptyprocess

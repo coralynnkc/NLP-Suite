@@ -133,6 +133,5 @@ customtkinter==6.0.0
 ipython<9
 
 # Not installed, because nothing in src/ imports them (docs/future-work.md 2.3): geopandas, shapely, gmaps,
-# googlemaps, geojson and geocoder (only the unused GIS_heatMap* files; GIS_Google_Maps_util writes its own JS),
-# SPARQLWrapper (only the unused knowledge_graphs_DBpedia_util_SPARQL), pywsd, mpld3, ipywidgets, and
+# googlemaps, geojson and geocoder (GIS_Google_Maps_util writes its own JS), SPARQLWrapper, pywsd, mpld3, ipywidgets, and
 # contextualSpellCheck (listed in BERT_util's install check, never loaded) with its editdistance.
