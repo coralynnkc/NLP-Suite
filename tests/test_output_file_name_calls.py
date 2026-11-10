@@ -11,7 +11,7 @@ import glob
 import os
 
 SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
-KNOWN = {"html_annotator_extractor_util_NEW.py"}  # dead file, deleted by PR #1706
+KNOWN = set()  # files left as they are; keep it empty
 
 
 def shifted_calls():
