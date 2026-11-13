@@ -59,7 +59,7 @@ PR #1706; it conflicts with `roberto` since #1705 merged (both touch `README.txt
 
 ## 2. Bundle size (scan of 11 Nov 2026)
 
-**Where it stands:** the v1.6.41 zips are **1,331 MB** (`NLP-Suite-mac-arm64.zip`) and **1,539 MB** (`NLP-Suite-windows-x64.zip`). The self-updater downloads the whole zip on every update, so size is paid again at each release, not just at first install. The Suite's own files are small: `src/` 12 MB, `lib/` 66 MB, `TIPS/` 73 MB, uncompressed. Almost all the size is Python packages.
+**Where it stands:** the v1.6.41 zips are **1,396 MB** (`NLP-Suite-mac-arm64.zip`) and **1,615 MB** (`NLP-Suite-windows-x64.zip`) (1,331 and 1,540 MiB, the figures this section used to give). **Measured 13 Nov, `build-installers.yml` on `spike/1.6.43-bundle-size` (run 43446189138): 775 MB (−44%) and 863 MB (−47%).** GitHub's Actions page shows the artifact in MiB after its own re-compression (718 and 805), a little below the zip a user downloads. The self-updater downloads the whole zip on every update, so size is paid again at each release, not just at first install. The Suite's own files are small: `src/` 12 MB, `lib/` 66 MB, `TIPS/` 73 MB, uncompressed. Almost all the size is Python packages.
 
 **How it was found:** `gh release view` for the asset sizes; reading `NLP_Suite.spec`, `build-installers.yml` and `run_script_util.py`; a `grep` of `src/*.py` for an `import`/`from` of each package in `requirements*.txt`, then for any mention of the ones with no import. **Not measured:** per-package sizes inside the zip. The figures below that say "estimate" need one release zip unpacked and `du` run on `_internal/` and `python-env/.../site-packages` by package (not possible on Cora's machine; do it on the machine that runs the pre-tag build).
 
@@ -107,6 +107,7 @@ Each was checked by `grep` over `src/`. Small one by one; they shorten the build
 - §2.1 option 1. Measured on a local macOS build (PyInstaller 6.22, the 3.10 NLP env, not the CI env): `_internal/` **496 → 187 MB**. What was in it: a second copy of `TIPS/` (74 MB), `lib/` (66 MB) and `src/`, and transformers 46, jedi 28, sklearn 18, h5py 9, stanza 7 MB... What stays: the menu's own needs (customtkinter, PIL, pandas, psutil, requests) and spaCy's chain (spacy, numpy, scipy, matplotlib, plotly, openpyxl), because the language advisor imports `spaCy_util` inside the menu process. A probe build of each spec imported the same 23 modules the menu imports, with the same result.
 - **Found:** the advisor's Stanza column has always been empty in the zip: `Stanza_util` needs torch, which the spec excluded before and after. Fix: run the advisor through `python-env` like the tools, or have `Stanza_util.list_all_languages` not import stanza.
 - §2.4: 42 TIPS PDFs recompressed, 76.7 → 61.2 MB.
+- **CI result:** the first CI build still had llvmlite (124 MB) and pyarrow (121 MB) in the Mac `_internal/` (optional pandas back ends, present in the CI env through umap and fastcoref's datasets); now excluded. Final zips: Mac 775 MB, Windows 863 MB (from 1,396 and 1,615). Both have their entry points and `lib/release_manifest.tsv`, no TensorFlow package, and the Mac app starts. One Mac run hung in PyInstaller's spaCy hook on a slow runner; the rerun took 1 min 19 s.
 
 ### 2.5 When, and the checks
 
