@@ -26,7 +26,7 @@ Details in [docs/future-work.md](docs/future-work.md); section numbers below ref
 - PR #1706 deletes the legacy setup scripts and unused files (§1.1). Rebase it on `roberto` first; it conflicts with #1705 in `README.txt` and `CLAUDE.md`. Deleting `src/requirements*.txt` also closes 108 of the 178 Dependabot alerts (§3.1).
 - Drop TensorFlow, which nothing imports (§2.2), then trim `NLP_Suite.spec` to what the menu needs (§2.1), and remove the requirements that nothing imports (§2.3).
 
-**1.6.44 (planned): the HW 5 tools** (§4), issues #1718–#1724: Shape of Stories, NRC, SentiWordNet, spaCy sentiment, CoreNLP memory, vocabulary, language detection. QTM 446W's HW 5 is due Sun 6 Dec. #1722 and #1719 first.
+**1.6.44: the HW 5 tools** (§4), issues #1718–#1724 and #1549, are fixed on `spike/1.6.44-hw5` (13 Nov), with tests and a CHANGELOG section; QTM 446W's HW 5 is due Sun 6 Dec. It does not depend on 1.6.43, so it can be tagged first if 1.6.43 is not ready (swap the numbers). Before tagging: open one PR per issue from the branch's commits or one PR for the branch (Roberto's call), then the checks in §4.
 
 **Python 3.11 security release** (§3): the summarizer replacement (§3.2), then #1688 rebased with Pillow 13 and transformers 5. It needs #1706 merged first. Its release number has to be settled against 1.6.44.
 
