@@ -14,6 +14,10 @@ import IO_csv_util
 import shape_of_stories_vectorizer_util as vec
 import shape_of_stories_visualization_util as viz
 
+# scikit-learn 1.2 renamed AgglomerativeClustering(affinity=...) to metric= and 1.4 removed affinity, so
+# affinity= crashed every Hierarchical Clustering run with a TypeError (#1722). metric= needs 1.2 or later.
+HC_PARAMS = {"metric": "euclidean", "linkage": "ward"}
+
 
 class SVDClustering:
     def __init__(self, n_modes):
@@ -175,7 +179,7 @@ class Clustering:
         """
         assert self.n_clust >= 1
         assert self.n_clust < len(vectors)
-        cluster = AgglomerativeClustering(n_clusters=self.n_clust, affinity="euclidean", linkage="ward")
+        cluster = AgglomerativeClustering(n_clusters=self.n_clust, **HC_PARAMS)
         cluster.fit_predict(vectors)
         clusters_indices = cluster.labels_
         # computes the complete clustering of the vectors
