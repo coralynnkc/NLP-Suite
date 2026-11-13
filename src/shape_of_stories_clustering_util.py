@@ -76,6 +76,18 @@ class SVDClustering:
         )
 
 
+def nonnegative(vectors):
+    """The vectors shifted up so that the smallest value is 0, for NMF, which refuses negative values.
+
+    Polarity scores (spaCy/TextBlob, -1 to 1) stopped NMF with "Negative values in data passed to NMF
+    initialization". A shift by one constant keeps every arc's shape; the clusters are drawn from the original
+    vectors. Vectors with no negative value are returned as they are.
+    """
+    vectors = np.asarray(vectors, dtype=float)
+    low = vectors.min()
+    return vectors - low if low < 0 else vectors
+
+
 class NMFClustering:
     def __init__(self, n_clusters, max_iter_nmf=1000):
         self.max_iter_nmf = max_iter_nmf
@@ -106,7 +118,7 @@ class NMFClustering:
         model = NMF(
             n_components=self.n_clusters, init="random", random_state=0, max_iter=self.max_iter_nmf, solver="mu"
         )
-        W = model.fit_transform(vectors)
+        W = model.fit_transform(nonnegative(vectors))
         # H = model.components_.T
 
         # here the groups are made out of the indices of the docs, not their vectors

@@ -84,3 +84,37 @@ def test_hc_runs_on_real_scikit_learn():
             assert weights[-1] == len(vectors)
     finally:
         _real_pandas.swap_out(saved)
+
+
+def test_nmf_input_is_shifted_to_nonnegative():
+    """spaCy polarity (-1..1) stopped NMF with "Negative values in data passed to NMF initialization"."""
+    try:
+        _, saved = _real_pandas.swap_in()
+    except ImportError:
+        pytest.skip("pandas/numpy not installed")
+    try:
+        import numpy as np
+
+        stubs = dict(_LOCAL_STUBS)
+        for m in (
+            "matplotlib",
+            "matplotlib.pyplot",
+            "scipy",
+            "scipy.cluster",
+            "scipy.cluster.hierarchy",
+            "scipy.linalg",
+            "sklearn",
+            "sklearn.cluster",
+            "sklearn.decomposition",
+            "tqdm",
+        ):
+            if m not in sys.modules or m.startswith(("sklearn", "scipy")):
+                stubs[m] = MagicMock()
+        with patch.dict(sys.modules, stubs):
+            mod = _load("_sos_clustering_nmf")
+        shifted = mod.nonnegative([[-0.5, 0.25], [0.75, -1.0]])
+        assert shifted.min() == 0
+        assert np.allclose(shifted, [[0.5, 1.25], [1.75, 0.0]])
+        assert np.allclose(mod.nonnegative([[1.0, 2.0]]), [[1.0, 2.0]])
+    finally:
+        _real_pandas.swap_out(saved)
