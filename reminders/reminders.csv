@@ -55,14 +55,14 @@ style_analysis,NLP setup options,"Some of the algorithms behind this GUI rely on
 Your selected corpus language is English.
 Your selected NLP package for basic functions (e.g., sentence splitting, tokenizing, lemmatizing) is Stanza.
 
-You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package and corpus language.",OFF
+You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package (parsers & annotators) and corpus language.",OFF
 style_analysis,K sentences repetition finder in CoNLL table,"In the CoNLL table analyzer GUI there is another K-sentences repetition finder algorithm. It provides data based based on the CoNLL table POS tags on counts and proportions of nouns, verbs, adjectives, and proper nouns in the first and last K sentences of a document.",OFF
 sentiment_analysis,NLP setup options,"Some of the algorithms behind this GUI rely on a specific NLP package to carry out basic NLP functions (e.g., sentence splitting, tokenizing, lemmatizing) for a specific language your corpus is written in.
 
 Your selected corpus language is English.
 Your selected NLP package for basic functions (e.g., sentence splitting, tokenizing, lemmatizing) is Stanza.
 
-You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package and corpus language.",OFF
+You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package (parsers & annotators) and corpus language.",OFF
 sentiment_analysis,Stanford CoreNLP Sentiment Analysis system requirements,"The Stanford CoreNLP Sentiment Analysis tool requires two components.
 
 1. A copy of the FREEWARE Stanford CoreNLP suite installed on your machine. You can download the FREEWARE Stanford CoreNLP at https://stanfordnlp.github.io/CoreNLP/download.html.
@@ -73,7 +73,7 @@ file_checker_converter_cleaner,NLP setup options,"Some of the algorithms behind 
 Your selected corpus language is English.
 Your selected NLP package for basic functions (e.g., sentence splitting, tokenizing, lemmatizing) is Stanza.
 
-You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package and corpus language.",OFF
+You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package (parsers & annotators) and corpus language.",OFF
 NLP_setup_IO,Input/Output options,"The two widgets for INPUT FILE and INPUT DIRECTORY are mutually exclusive. You can select one OR the other but not both. Click on either button to make your selection.
 
 To change an already selected option from FILE to DIRECTORY or from DIRECTORY to FILE, simply click on the button you want to select, make your selection, and the I/O configuration will automatically update.",OFF
@@ -183,7 +183,7 @@ file_search_byWord,NLP setup options,"Some of the algorithms behind this GUI rel
 Your selected corpus language is English.
 Your selected NLP package for basic functions (e.g., sentence splitting, tokenizing, lemmatizing) is Stanza.
 
-You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package and corpus language.",OFF
+You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package (parsers & annotators) and corpus language.",OFF
 Stanford_CoreNLP,CoreNLP POS annotator timing,"Beware that the CoreNLP POS annotator on the 296 files (2042312 words total) of the President of the United States Inaugural and State of the Union speeches, takes approximately 2 minutes on a standard laptop.",OFF
 file_splitter_ByLength,Output directory of split files,"This is a reminder that all file splitter scripts save the split files inside a subdirectory by the name of split_files of the directory where the input txt files are located, regardless of the choice of output directory.",OFF
 data_manipulation,Merge option,"Please, click next the + sign on this line to select another KEY to be used for merging files or click OK to accept current selection.",OFF
@@ -209,7 +209,7 @@ wordclouds,NLP setup options,"Some of the algorithms behind this GUI rely on a s
 Your selected corpus language is English.
 Your selected NLP package for basic functions (e.g., sentence splitting, tokenizing, lemmatizing) is Stanza.
 
-You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package and corpus language.",OFF
+You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package (parsers & annotators) and corpus language.",OFF
 GIS,NER tags frequency,"O is likely to be the most frequent NER tag in your corpus. It is likely to 'mask' all other tags. If that is the case, when the chart is displayed you may want to delete the row containing the O tag in the Data worksheet of the Excel chart file to have a better view of all other tags.",OFF
 parsers_annotators,CoNLL table analyzer,"The Stanford CoreNLP GUI will now open the 'CoNLL table analyzer' GUI. When the GUI opens, you will need to select theGUI-specific I/O configuration.
 
@@ -250,13 +250,13 @@ file_splitter,NLP setup options,"Some of the algorithms behind this GUI rely on 
 Your selected corpus language is English.
 Your selected NLP package for basic functions (e.g., sentence splitting, tokenizing, lemmatizing) is Stanza.
 
-You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package and corpus language.",OFF
+You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package (parsers & annotators) and corpus language.",OFF
 NGrams_CoOccurrences,NLP setup options,"Some of the algorithms behind this GUI rely on a specific NLP package to carry out basic NLP functions (e.g., sentence splitting, tokenizing, lemmatizing) for a specific language your corpus is written in.
 
 Your selected corpus language is English.
 Your selected NLP package for basic functions (e.g., sentence splitting, tokenizing, lemmatizing) is Stanza.
 
-You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package and corpus language.",OFF
+You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package (parsers & annotators) and corpus language.",OFF
 NGrams_CoOccurrences,subprocess.call(cmd) error,"subprocess.call(cmd) error
 
 If the VIEWER you are running exits with an error code about a file not found, most likely your selected INPUT & OUTPUT directory options are too long for Windows to handle.
@@ -284,7 +284,7 @@ YOU CAN GO BACK TO THE ORIGINAL DISPLAY BY CLICKING THE REFRESH BUTTON IN YOUR B
 Your selected corpus language is English.
 Your selected NLP package for basic functions (e.g., sentence splitting, tokenizing, lemmatizing) is Stanza.
 
-You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package and corpus language.",OFF
+You can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package (parsers & annotators) and corpus language.",OFF
 *,SVO output,"The SVO pipeline will create in output an SVO subdirectory inside the main output directory.
 
 Depending upon the options you select it will also create different subdirectories (e.g., GIS, WordNet) inside the SVO subdirectory. Contrary to this, the creference resolution option will create a subdirectory inside the main output directory rather than the SVO subdirectory, since coreferenced files can then be used as input to any NLP algorithms.

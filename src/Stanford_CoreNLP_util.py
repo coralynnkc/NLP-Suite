@@ -174,7 +174,7 @@ def check_CoreNLP_available_languages(language):
         message_title = "CoreNLP website"
         message = (
             language + " is not available in Stanford CoreNLP."
-            "\n\nAvailable languages are: Arabic, Chinese, English, French, German, Hungarian, Italian, Spanish. \n\nYou can change the selected language using the Setup dropdown menu at the bottom of this GUI, select the 'Setup NLP package and corpus language' to open the GUI where you can change the language option."
+            "\n\nAvailable languages are: Arabic, Chinese, English, French, German, Hungarian, Italian, Spanish. \n\nYou can change the selected language using the Setup dropdown menu at the bottom of this GUI, select the 'Setup NLP package (parsers & annotators) and corpus language' to open the GUI where you can change the language option."
             + CoreNLP_web
             + "\n\nWould you like to open the Stanford CoreNLP website for annotator availability for the various languages supported by CoreNLP?"
         )
@@ -1393,7 +1393,7 @@ CoreNLP_available_lang = ["Arabic, Chinese, English, French, German, Hungarian, 
 #         if not silent:
 #             mb.showerror("Warning",
 #                          "Stanford CoreNLP does not currently support the " + str(
-#                              annotator_params) + " annotator for " + language + ".\n\nPlease, select a different annotator or a different language.\n\nYou can change the selected language using the Setup dropdown menu at the bottom of this GUI, select the 'Setup NLP package and corpus language' to open the GUI where you can change the language option.")
+#                              annotator_params) + " annotator for " + language + ".\n\nPlease, select a different annotator or a different language.\n\nYou can change the selected language using the Setup dropdown menu at the bottom of this GUI, select the 'Setup NLP package (parsers & annotators) and corpus language' to open the GUI where you can change the language option.")
 #         annotator_available = False
 #     else:
 #         annotator_available = True

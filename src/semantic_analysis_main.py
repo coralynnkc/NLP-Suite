@@ -1083,7 +1083,7 @@ classify_words_by_semantic_closeness_button = tk.Button(
     window,
     width=90,
     text="WORD embeddings: Classify words by semantic proximity: Word2Vec & word embeddings (Open GUI)",
-    command=lambda: run_script_util.run_script("Word2Vec_main.py"),
+    command=lambda: run_script_util.run_script("word2vec_main.py"),  # lowercase, as the file
 )
 y_multiplier_integer = GUI_IO_util.placeWidget(
     window, GUI_IO_util.labels_x_coordinate, y_multiplier_integer, classify_words_by_semantic_closeness_button, False
@@ -1378,7 +1378,7 @@ message = (
     + str(language)
     + ".\nYour selected NLP package for basic functions (e.g., sentence splitting, tokenizing, lemmatizing) is "
     + str(package_basics)
-    + ".\n\nYou can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package and corpus language."
+    + ".\n\nYou can always view your default selection saved in the config file NLP_default_package_language_config.csv by hovering over the Setup widget at the bottom of this GUI and change your default options by selecting Setup NLP package (parsers & annotators) and corpus language."
 )
 reminders_util.checkReminder(scriptName, title, message)
 

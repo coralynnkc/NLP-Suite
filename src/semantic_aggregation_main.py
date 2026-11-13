@@ -496,7 +496,7 @@ def open_GUI(*args):
         elif "CoNLL" in extra_GUIs_menu_var.get():
             run_script_util.run_script("CoNLL_table_analyzer_main.py")
         elif "Sense" in extra_GUIs_menu_var.get():
-            run_script_util.run_script("Word2Vec_main.py")
+            run_script_util.run_script("word2vec_main.py")  # the file is lowercase: fails on a case-sensitive disk
 
 
 extra_GUIs_menu_var.trace("w", open_GUI)
@@ -1414,7 +1414,7 @@ def activate_NLP_options(*args):
                 title="Warning",
                 message="The WordNet algorithms only work for the English language. Your selected language is "
                 + language
-                + '.\n\nYou can use the Setup dropdown menu at the bottom of this GUI and select "Setup NLP package and corpus language" option to select a differnt language if have an English-language corpus.',
+                + '.\n\nYou can use the Setup dropdown menu at the bottom of this GUI and select "Setup NLP package (parsers & annotators) and corpus language" option to select a differnt language if have an English-language corpus.',
             )
         do_not_repeat_language_warning = True
 
