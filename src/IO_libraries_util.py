@@ -96,6 +96,22 @@ def missing_modules_message(calling_script, missing_modules):
     )
 
 
+def downloaded_build(NLPPath=None, frozen=None):
+    """True in the downloaded (zip) NLP Suite: the menu app itself, or a tool it started on its bundled python-env.
+
+    The tools run on python-env as ordinary Python, where sys.frozen is False, so messages that tested only
+    sys.frozen gave zip users the from-source advice (conda environments, pip): the NLTK download message
+    (VADER's at every run) and the missing-Java message. Same test as NLP_setup_self_update_util.is_zip_install.
+    """
+    if NLPPath is None:
+        NLPPath = GUI_IO_util.NLPPath
+    if os.path.isdir(os.path.join(NLPPath, ".git")):
+        return False
+    if frozen is None:
+        frozen = getattr(sys, "frozen", False)
+    return bool(frozen) or os.path.isdir(os.path.join(NLPPath, "python-env"))
+
+
 def nltk_download_message(resource, frozen):
     """The text shown while a missing NLTK resource is downloaded. Only a source checkout can use pip/conda."""
     msg = (
@@ -210,7 +226,7 @@ def _import_one_nltk_resource(window, resource_path, resource):
         except LookupError:
             nltk.data.find(resource_path + ".zip")
     except LookupError:
-        msg = nltk_download_message(resource, getattr(sys, "frozen", False))
+        msg = nltk_download_message(resource, downloaded_build())
 
         IO_user_interface_util.timed_alert(window, 2000, "Downloading NLTK resource", msg, False)
         print(msg)
@@ -312,7 +328,7 @@ def check_java_installation(script):
             message = message + "\n\nJAVA MAY NOT BE CORRECTLY INSTALLED IN YOUR MACHINE.\n\n"
         else:
             message = message + "\n\nJAVA IS NOT INSTALLED IN YOUR MACHINE.\n\n"
-        if getattr(sys, "frozen", False):
+        if downloaded_build():
             message = (
                 message
                 + script

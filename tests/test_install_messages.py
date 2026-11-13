@@ -99,3 +99,22 @@ def test_a_missing_punkt_tab_is_downloaded(iolib):
     ):
         iolib.import_nltk_resource(None, "tokenizers/punkt", "punkt")
     fake_nltk.download.assert_called_once_with("punkt_tab")
+
+
+class TestDownloadedBuild:
+    """Tools in the zip run on python-env (sys.frozen False): messages must still give zip advice, not conda."""
+
+    def test_tool_on_python_env_is_the_download(self, iolib, tmp_path):
+        (tmp_path / "python-env").mkdir()
+        assert iolib.downloaded_build(str(tmp_path), frozen=False)
+
+    def test_frozen_menu_is_the_download(self, iolib, tmp_path):
+        assert iolib.downloaded_build(str(tmp_path), frozen=True)
+
+    def test_source_checkout(self, iolib, tmp_path):
+        (tmp_path / ".git").mkdir()
+        (tmp_path / "python-env").mkdir()
+        assert not iolib.downloaded_build(str(tmp_path), frozen=False)
+
+    def test_plain_source_folder(self, iolib, tmp_path):
+        assert not iolib.downloaded_build(str(tmp_path), frozen=False)
