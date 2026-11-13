@@ -179,13 +179,31 @@ def install_all_Python_packages(window, calling_script, modules_to_try):
 # 'corpora/stopwords','stopwords'
 
 
+def nltk_resources_to_check(resource_path, resource):
+    """The (path, name) pairs import_nltk_resource checks and downloads for one resource.
+
+    NLTK 3.9 replaced the pickled punkt tokenizer with punkt_tab, and its tokenizers (and TextBlob's, used by
+    NRC and spaCy's sentiment) look only for punkt_tab: SentiWordNet and NRC stopped with
+    "Resource 'punkt_tab' not found" though punkt was there (#1718). punkt stays for older NLTK.
+    """
+    pairs = [(resource_path, resource)]
+    if resource == "punkt":
+        pairs.append(("tokenizers/punkt_tab", "punkt_tab"))
+    return pairs
+
+
 def import_nltk_resource(window, resource_path, resource):
+    for path, name in nltk_resources_to_check(resource_path, resource):
+        _import_one_nltk_resource(window, path, name)
+
+
+def _import_one_nltk_resource(window, resource_path, resource):
     try:
         import nltk.data
 
         try:
             nltk.data.find(resource_path)
-        except:
+        except LookupError:
             nltk.data.find(resource_path + ".zip")
     except LookupError:
         msg = nltk_download_message(resource, getattr(sys, "frozen", False))
