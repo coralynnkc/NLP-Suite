@@ -75,6 +75,12 @@ def test_punkt_also_checks_punkt_tab(iolib):
     assert ("tokenizers/punkt_tab", "punkt_tab") in pairs
 
 
+def test_the_pos_tagger_also_checks_its_english_json(iolib):
+    # NLTK 3.9+ PerceptronTagger loads taggers/averaged_perceptron_tagger_eng/ (SentiWordNet, nominalization)
+    pairs = iolib.nltk_resources_to_check("taggers/averaged_perceptron_tagger", "averaged_perceptron_tagger")
+    assert ("taggers/averaged_perceptron_tagger_eng", "averaged_perceptron_tagger_eng") in pairs
+
+
 def test_other_resources_are_checked_alone(iolib):
     assert iolib.nltk_resources_to_check("corpora/wordnet", "wordnet") == [("corpora/wordnet", "wordnet")]
 

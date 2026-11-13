@@ -179,16 +179,20 @@ def install_all_Python_packages(window, calling_script, modules_to_try):
 # 'corpora/stopwords','stopwords'
 
 
-def nltk_resources_to_check(resource_path, resource):
-    """The (path, name) pairs import_nltk_resource checks and downloads for one resource.
+# NLTK 3.9 replaced two pickled resources with new ones, and its code looks only for the new ones: SentiWordNet and
+# NRC stopped with "Resource 'punkt_tab' not found" though punkt was there (#1718), and SentiWordNet then with
+# "Resource 'averaged_perceptron_tagger_eng' not found". The old ones stay checked for older NLTK.
+_NLTK_39_RESOURCES = {
+    "punkt": ("tokenizers/punkt_tab", "punkt_tab"),
+    "averaged_perceptron_tagger": ("taggers/averaged_perceptron_tagger_eng", "averaged_perceptron_tagger_eng"),
+}
 
-    NLTK 3.9 replaced the pickled punkt tokenizer with punkt_tab, and its tokenizers (and TextBlob's, used by
-    NRC and spaCy's sentiment) look only for punkt_tab: SentiWordNet and NRC stopped with
-    "Resource 'punkt_tab' not found" though punkt was there (#1718). punkt stays for older NLTK.
-    """
+
+def nltk_resources_to_check(resource_path, resource):
+    """The (path, name) pairs import_nltk_resource checks and downloads for one resource (see _NLTK_39_RESOURCES)."""
     pairs = [(resource_path, resource)]
-    if resource == "punkt":
-        pairs.append(("tokenizers/punkt_tab", "punkt_tab"))
+    if resource in _NLTK_39_RESOURCES:
+        pairs.append(_NLTK_39_RESOURCES[resource])
     return pairs
 
 
