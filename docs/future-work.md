@@ -101,6 +101,13 @@ Each was checked by `grep` over `src/`. Small one by one; they shorten the build
 - `lib/namesGender` (34 MB of CSV) compresses well in the zip already; leave it.
 - §1.1's deletions and a §1.3 `vulture` pass are cleanup, not size.
 
+### 2.6 Done on `spike/1.6.43-bundle-size` (13 Nov)
+
+- §2.2 TensorFlow (with `h5py`) and §2.3's list, except `xlrd` and `numexpr` (kept: harmless, `numexpr` is a pyLDAvis dependency anyway) and `ipython` (`topic_modeling_gensim_util` calls `pyLDAvis.display`, which imports it; `pexpect`/`ptyprocess` stay on the Mac for it).
+- §2.1 option 1. Measured on a local macOS build (PyInstaller 6.22, the 3.10 NLP env, not the CI env): `_internal/` **496 → 187 MB**. What was in it: a second copy of `TIPS/` (74 MB), `lib/` (66 MB) and `src/`, and transformers 46, jedi 28, sklearn 18, h5py 9, stanza 7 MB... What stays: the menu's own needs (customtkinter, PIL, pandas, psutil, requests) and spaCy's chain (spacy, numpy, scipy, matplotlib, plotly, openpyxl), because the language advisor imports `spaCy_util` inside the menu process. A probe build of each spec imported the same 23 modules the menu imports, with the same result.
+- **Found:** the advisor's Stanza column has always been empty in the zip: `Stanza_util` needs torch, which the spec excluded before and after. Fix: run the advisor through `python-env` like the tools, or have `Stanza_util.list_all_languages` not import stanza.
+- §2.4: 42 TIPS PDFs recompressed, 76.7 → 61.2 MB.
+
 ### 2.5 When, and the checks
 
 1.6.43, with the dead files (§1.1): both change what the build ships, and together they close the 108 alerts in the stale `src/requirements*.txt` files (§3.1). Roberto's call. One PR each, 2.2 before 2.1 so a TF regression can't hide behind the spec change.
@@ -122,6 +129,7 @@ Dependabot alerts on `current-stable`, read 11 Nov 2026 with `gh api repos/NLP-S
 | `src/requirements.txt` | 51 | — | 1 | 2 | Deleting the file (#1706) |
 | `src/requirements_mac.txt` | 50 | — | 1 | 3 | Deleting the file (#1706) |
 
+- **13 Nov:** `spike/1.6.43-bundle-size` deletes the two `src/` files and moves transformers to 4.51.3, the newest that keeps the summarizer (fixes the 7 alerts patched in 4.48–4.51). Expected after it reaches `current-stable`: 63 open (52 Pillow, 11 transformers).
 - **108 of the 178 are in the two stale `src/` files**, which no build reads. #1706 deletes both, so they close when that reaches `current-stable` (Dependabot reads the default branch, not `roberto`). The stanza and protobuf alerts are only there: the root file leaves both unpinned, and today they resolve to stanza 1.15.0 and protobuf 7.36.2, above every fixed version.
 - **Pillow 13.0.0 fixes all 52 in the root file**, and it needs Python 3.11 (no 3.10 wheels). That is #1688.
 - **transformers 4.41.2 is the other 18**, and Pillow does not touch them. 14 are fixed by 4.53 (ReDoS, three untrusted-pickle loaders); 4 need 5.x: two remote-code-execution paths (fixed in 5.3 and 5.5), a `save_pretrained` path traversal (5.10) and the `Trainer` (5.0). transformers 5 also needs Python 3.11, so it can only move with #1688.
@@ -226,7 +234,7 @@ Deletions and behaviour changes. Each is ready to do once decided.
 
 ### 5.2 Smaller copy still to fix
 
-Low risk, left out of PR #1705 to keep it reviewable. Moved out of 1.6.42 on 11 Nov.
+Low risk, left out of PR #1705 to keep it reviewable. Moved out of 1.6.42 on 11 Nov. **Done on `spike/1.6.43-bundle-size`:** the Setup item name everywhere except `sentiment_analysis_main` and `style_analysis_main` (left to the 1.6.44 branch, which changes those files), the CLOSE hover, and `Word2Vec_main.py`.
 
 - **CoreNLP-era wording where three or four packages now work:** `NER_main` 611, 634, 658, 990; `GIS_main` 1290, 1322, 1343; `coreference_main` 272, 364, 563, 592, 635; `narrative_analysis_ALL_main` 443, 459, 927; `corpus_profiler_main` 717 ("hundreds" of documents), 726; `parsers_annotators_main` 972 (a "*" option that does not exist); `shape_of_stories_main` 599–600, 996, 1061 and `sentiments_emotions_ALL_main` 247 (spaCy listed as neural); `sentiment_analysis_main` 1077–1083, 1123 (old script names, `nltk.downloader`); `language_tools_advisor_util` 186, 254, 263; `NLP_setup_external_software_main` 491, 499, 518.
 - **"Setup NLP package and corpus language"** (the item is "Setup NLP package (parsers & annotators) and corpus language"): `NER_main` 144, `NGrams_CoOccurrences_main` 1571, `Stanza_util` 202/731, `Stanford_CoreNLP_util` 177, `sentiment_analysis_main` (7 places), `semantic_aggregation_main` 1417, `IO_internet_util` 89, and the "NLP setup options" reminder built in 9 GUIs.
@@ -346,8 +354,8 @@ Read from the code only: 96 `iterrows()` / row-append patterns in 29 files, most
 ### 6.10 Order of work
 
 1. ~~§6.1 Stanza check and lazy pipeline~~ (done, #1704).
-2. §6.3 pandas and requests out of the `GUI_util` import chain; §6.2 step 1 (`find_spec`). Every GUI gets faster.
-3. §6.7 launch-count block; §6.5 sleeps; §6.6 timeouts.
+2. §6.3 pandas out of the `GUI_util` import chain (requests: done on `spike/1.6.43-bundle-size`, `import GUI_util` 1.50 → 0.82 s on a Mac); §6.2 step 1 (`find_spec`). Every GUI gets faster.
+3. ~~§6.7 launch-count block~~ (done, same branch); §6.5 sleeps; §6.6 timeouts (`check_CoreNLPVersion` and `open_url` done on the same branch; `GUI_util.watch_video` and the release check in a thread remain).
 4. §6.4 alerts, once Roberto has decided the behaviour.
 5. §6.2 steps 2–3, module by module.
 6. Re-measure with the same commands, on Windows and on a Mac, and on the zip build. Add a CI check that `import GUI_util` under the test stubs does not import pandas or requests, so the gain is not lost.
