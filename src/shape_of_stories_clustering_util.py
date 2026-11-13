@@ -339,7 +339,8 @@ def estimate_best_k(document_matrix, output_dir, filesToOpen):
     np.random.seed(0)
 
     # document_matrix, documents_map = load_data()
-    A = np.array(document_matrix).T
+    # best k runs NMF too: shift negative scores (spaCy polarity) as NMFClustering does (#1722)
+    A = nonnegative(document_matrix).T
     t = 50
     sampling_rate = 0.8
 
