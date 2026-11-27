@@ -1,4 +1,16 @@
-"""BERT word embeddings (BERT_util.word_embeddings_BERT): which words, from which sentences.
+"""Tests for src/BERT_util.py, one file per module (folded from 2 files, 27 Nov 2026).
+
+From test_BERT_sentiment_truncation.py:
+
+BERT sentiment: sentences over 512 tokens are truncated, not passed whole (#1722).
+
+The cardiffnlp roBERTa tokenizers set no length limit of their own, so truncation=True without
+max_length let a 586-token sentence reach a model with 514 positions, and Shape of Stories (whose
+default method is BERT) and the sentiment GUI's BERT option stopped with a tensor-size RuntimeError.
+
+From test_BERT_word_embeddings.py:
+
+BERT word embeddings (BERT_util.word_embeddings_BERT): which words, from which sentences.
 
 The vector csv used to loop over the leftover `sentences` variable, so every document was written
 with the LAST document's sentences. The Lemmatize option was a no-op, because an import inside the
@@ -31,6 +43,26 @@ _STUBS = (
 )
 with patch.dict(sys.modules, {m: MagicMock() for m in _STUBS if m not in sys.modules}):
     import BERT_util
+
+
+# ---- formerly tests/test_BERT_sentiment_truncation.py ----
+
+
+def test_the_pipeline_is_capped_at_512_tokens():
+    assert BERT_util.SENTIMENT_PIPELINE_KWARGS == {"truncation": True, "max_length": 512}
+
+
+def test_sentiment_analysis_BERT_builds_the_pipeline_with_the_cap(tmp_path):
+    empty = tmp_path / "empty.txt"
+    empty.write_text("", encoding="utf-8")
+    with patch.object(BERT_util, "pipeline") as pipeline, patch.object(BERT_util, "mb"):
+        BERT_util.sentiment_analysis_BERT(str(empty), str(tmp_path), "out.csv", "", 1, "empty.txt", "some/model")
+    _, kwargs = pipeline.call_args
+    assert kwargs["truncation"] is True
+    assert kwargs["max_length"] == 512
+
+
+# ---- formerly tests/test_BERT_word_embeddings.py ----
 
 
 def _doc(*sentences):

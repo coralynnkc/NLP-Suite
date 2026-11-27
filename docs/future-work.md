@@ -306,7 +306,6 @@ Reviewed 9 Nov 2026. The older PRs conflict only because v1.6.40 reformatted all
 | PR | Opened | What | Merge | Tests | Release | Review |
 |---|---|---|---|---|---|---|
 | #1706 | 11-10 | The rest of the dead files (§1.1); its legacy-setup part shipped in 1.6.47 (#1800) | Conflicts: rebase and drop the files #1800 deleted | — | 1.6.48, if Roberto agrees | The pre-tag build and `bundle_gate.py` are its test |
-| #1803 | 11-23 | Tests: one file per `src/` module (pure move, 104 → 76 files, 979 tests collected before and after) | Conflict with 1.6.47's `test_WSI.py` change | Full run equal before and after | 1.6.48 | Rebase; also fold #1801's two BERT test files |
 | #1682 | 10-16 | spaCy CoNLL ID/HEAD sentence-level and 1-based | Conflict: ruff only, mechanical | 2 pass | Later (shared structure) | Correct: Stanza and CoreNLP already write 1-based, sentence-level, root 0, and no reader compensates for spaCy's old values. Shared structure, so not in a release about the updater. spaCy tables already on disk stay 0-based: say "re-parse" in the CHANGELOG |
 | #1683 | 10-16 | Gender dictionary looks up only PERSON tokens | Conflict: ruff only | 5 pass | No | **Needs changes:** hardcodes `Stanford_CoreNLP_util.CoreNLP_annotate` whatever parser is configured (so the option now needs Java); returns `''` with no message when no NER csv comes back; once "Will" is a PERSON anywhere, every "will" is tagged |
 | #1528 | 2024-09 | "dictionary functionality" (CallaGong) | — | — | No | **Close**: targets `current-stable`, 2 years old |
@@ -399,7 +398,7 @@ Largest reliability lever. Convert to `except Exception`, and on user-facing pat
 ### 12.6 Tests
 
 Coverage is 683 test functions in 67 files [3]. Gaps:
-- No **empty-DataFrame** regression test for the chart/statistics pipeline (only `test_emotion_arc_html.py` covers an empty frame).
+- No **empty-DataFrame** regression test for the chart/statistics pipeline (only the emotion-arc tests in `test_character_emotion_arcs_util.py` cover an empty frame).
 - No **multi-column chart** regression test for `charts_util` (the v1.6.4 "by Document" grouped-bar fix has no test).
 
 ### 12.7 Hygiene
@@ -418,7 +417,7 @@ Head branches of merged PRs are deleted automatically (repo setting since 18 Nov
 - `mac-font-pin` (22 Jul 2026): not in `roberto`, no open PR. Check whether it's still needed.
 - `dictionary` (Sep 2024), `taeeun` (Dec 2024): heads of stale PRs #1528 and #1525. Delete after those PRs are closed.
 - `remove_shortcut_prompt` (2021), `tony` (2023): no open PR. Delete candidates.
-- Cora's, open work: `chore/remove-dead-files` (#1706), `chore/tests-one-file-per-module` (#1803). The 1.6.43 spike branches and the 1.6.44 backup were deleted on 23 Nov.
+- Cora's, open work: `chore/remove-dead-files` (#1706). The 1.6.43 spike branches and the 1.6.44 backup were deleted on 23 Nov.
 
 Deleting someone else's remote branch is Roberto's call.
 
