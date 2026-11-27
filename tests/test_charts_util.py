@@ -246,3 +246,43 @@ def test_comparative_bar_charts_warns_on_a_missing_column(real_pd, tmp_path):
     comparative = _function("charts_util.py", "comparative_bar_charts", ns)
     assert comparative([str(tmp_path / "a.csv"), str(tmp_path / "b.csv")], str(tmp_path), "Sentiment label") is None
     assert "a.csv" in ns["mb"].showwarning.call_args.kwargs["message"]
+
+
+# ---- Categorical tab: Treemap, Sunburst and Colormap find the search values ----
+# The 1.6.47 sweep: all three stopped with "No search values found" on a VADER csv searched for Document ID
+# "1,2,3,4,5" and Sentiment label "positive,negative,neutral". The values were split on ", " only, so "a,b"
+# was one value; further_group mapped a numeric column (Document ID) with string keys, so every row became NaN;
+# and the colormap's WHERE compared the column's numbers with the entered strings.
+
+
+def test_search_values_split_on_commas_with_or_without_spaces():
+    split = _function("charts_util.py", "split_search_values", {})
+    assert split("positive,negative, neutral ,,") == ["positive", "negative", "neutral"]
+    assert split("") == []
+
+
+def test_further_group_maps_a_numeric_column(real_pd):
+    ns = {"re": __import__("re")}
+    further_group = _function("charts_util.py", "further_group", ns)
+    df = real_pd.DataFrame({"Document ID": [1, 2, 12, 3]})
+    further_group(df, "Document ID", ["1", "3"])
+    # a partial match, as for filenames: "1" also groups document 12
+    assert df["Real_Document ID"].fillna("-").tolist() == ["1", "-", "1", "3"]
+
+
+def test_where_values_match_numeric_columns(real_pd):
+    where_data = _function("charts_util.py", "where_data", {"pd": real_pd})
+    df = real_pd.DataFrame({"Document ID": [1, 2, 3], "x": ["a", "b", "c"]})
+    assert where_data(df, where_column={"Document ID": ["1", "3"]})["x"].tolist() == ["a", "c"]
+    aggregate = _function("charts_util.py", "process_and_aggregate_data", {"pd": real_pd})
+    df = real_pd.DataFrame({"Document ID": [1, 1, 2], "Sentiment label": ["pos", "neg", "pos"]})
+    pivot = aggregate(
+        df, where_column={"Document ID": ["1"]}, groupby_column="Document ID", select_column="Sentiment label"
+    )
+    assert pivot.to_dict() == {1: {"neg": 1, "pos": 1}}
+
+
+def test_a_field_without_search_values_filters_nothing(real_pd):
+    where_data = _function("charts_util.py", "where_data", {"pd": real_pd})
+    df = real_pd.DataFrame({"Document ID": [1, 2]})
+    assert len(where_data(df, where_column={"Document ID": []})) == 2

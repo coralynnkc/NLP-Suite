@@ -5,6 +5,7 @@ on the corresponding GitHub Release page (the top section is added automatically
 release workflow). Keep the newest version's section at the very top and update it before tagging.
 
 ## Unreleased
+- **Data visualization: Treemap, Sunburst and Colormap find your search values.** On the Categorical tab they stopped with "No search values found" when the values were typed without a space after each comma ("positive,negative"), or when the field held numbers (such as Document ID). Both now work.
 - **Data visualization: "Comparative bar charts" and the dynamic time chart work.** "Comparative bar charts" (Categorical tab) stopped with "module 'charts_util' has no attribute 'comparative_bar_charts'"; it now saves one bar chart that compares the selected field's values across your csv files, a bar color per file. The animated time chart stopped with a KeyError; it now runs. The PC-ACE "Time chart" option, which stopped the same way, now makes its chart too.
 - **Tests are filed one per module (behind the scenes).** The test files were folded into one per source module; the same tests run, and nothing in the NLP Suite changes.
 

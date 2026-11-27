@@ -2344,10 +2344,12 @@ def process_and_aggregate_data(data, **kwargs):
     agg_column = kwargs.get("groupby_column")  # GROUP BY column
     select_columns = kwargs.get("select_column", [])  # SELECT columns
     for col, value in conditions.items():
+        if not value or value == [""]:  # no values typed: no filter
+            continue
         if isinstance(value, (list, tuple)):
-            data = data[data[col].isin(value)]
+            data = data[data[col].astype(str).isin([str(v) for v in value])]  # typed values are text
         else:
-            data = data[data[col] == value]
+            data = data[data[col].astype(str) == str(value)]
 
     if not select_columns:
         select_columns = [col for col in data.columns if col != agg_column]
@@ -2535,6 +2537,11 @@ def get_transformation_choice(choice=5):
     return transformations.get(choice, None)
 
 
+def split_search_values(text):
+    """The search values typed on the Categorical tab: comma-separated, with or without spaces."""
+    return [v.strip() for v in str(text).split(",") if v.strip()]
+
+
 def further_group(df, major_parm, small_prm):
     ## majro_parm = str, small_prm = list of string to be regexed against a
     ## as we need to check suffix of string for GROUP BY
@@ -2544,7 +2551,7 @@ def further_group(df, major_parm, small_prm):
         for j in small_prm:
             if re.search(".*" + str(j) + ".*", str(i)):
                 mps_suffix[str(i)] = str(j)
-    df["Real_" + major_parm] = df[major_parm].map(mps_suffix)
+    df["Real_" + major_parm] = df[major_parm].astype(str).map(mps_suffix)  # keys are str: a numeric column too
 
 
 def sql_commands(s, dataFrame):
@@ -2561,7 +2568,7 @@ def sql_commands(s, dataFrame):
     GROUPBY = GROUPBY_s[0]
     add = GROUPBY_s[1]
     if add:
-        all_values = add.split(", ")
+        all_values = split_search_values(add)
         further_group(dataFrame, GROUPBY, all_values)
         print("The function detected string values in input, and they were mapped accordingly")
         GROUPBY = "Real_" + GROUPBY
@@ -2580,7 +2587,7 @@ def sql_commands(s, dataFrame):
     if WHERE_s:
         for condition in WHERE_s:
             cmd = condition[0].split("|")
-            mtc = cmd[1].split(", ")
+            mtc = split_search_values(cmd[1])
             WHERE[cmd[0]] = mtc
     return WHERE, GROUPBY, SELECT
 
@@ -2603,7 +2610,7 @@ def special_sql_commands(s, dataFrame):
     GROUPBY = GROUPBY_s[0]
     add = GROUPBY_s[1]
     if add:
-        all_values = add.split(", ")
+        all_values = split_search_values(add)
         further_group(dataFrame, GROUPBY, all_values)
         print("The function detected string values in input, and they were mapped accordingly")
         GROUPBY = "Real_" + GROUPBY
@@ -2611,7 +2618,7 @@ def special_sql_commands(s, dataFrame):
     if WHERE_s:
         for condition in WHERE_s:
             cmd = condition[0].split("|")
-            mtc = cmd[1].split(", ")
+            mtc = split_search_values(cmd[1])
             WHERE[cmd[0]] = mtc
     return WHERE, GROUPBY
 
@@ -2706,10 +2713,10 @@ def select_and_counting(df, select_and_count):
 def where_data(data, **kwargs):
     conditions = kwargs.get("where_column", {})  # WHERE conditions
     for col, values in conditions.items():
-        if values == "" or values == [""]:
+        if not values or values == [""]:  # no values typed: no filter
             continue
         if isinstance(values, (list, tuple)):
-            data = data[data[col].isin(values)]
+            data = data[data[col].astype(str).isin([str(v) for v in values])]  # typed values are text
     # THIS FUNCTION IS DOING: SELECT FROM DATA WHERE cond_1, cond_2, ... con_n for ** kwargs
     return data
 

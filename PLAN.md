@@ -9,9 +9,8 @@ What to do before tagging the next release, and what comes after it. The finding
 No dependency changes: `requirements*.txt` and the bundled Python (python-build-standalone `20251217`) stay as in 1.6.47, so the sweep against 1.6.47 shows only what the code changed. In order:
 
 1. **The rest of #1706** (§1.1): the one-off `src/_*.py` scripts, the unused modules, `post_build_fixup.py`, `wiki-draft-About.md`, `build-family-viewer.yml`. The family-viewer worry is settled (23 Nov): the viewer (`family_archive_app.py`, `gedcom_to_csv.py`) moved to a private repo on 16 Jun 2026 and imported only pandas, geopy and the standard library, nothing #1706 deletes; `build-family-viewer.yml` builds two spec files that are no longer in the repo. Rebase #1706 on `roberto`, drop what 1.6.47 already deleted, merge once Roberto agrees.
-2. **Left from the sweep** (§10): the categorical treemap, sunburst and colormap charts stop with "No search values found".
-3. **`tool_sweep.py` on a source checkout:** seed each recipe's `config/` from `lib/config_defaults` when the folder being swept has none. On 23 Nov a source sweep ran about 40 recipes with no language set (VADER: "your language is ''"), so it could not stand in for a zip sweep.
-4. **Checks before the tag** (§14): tool sweep of the candidate against **1.6.47** (sweep the published 1.6.47 zip first; until then `~/Documents/NLP_output/tool_sweep/1.6.47-rc2` plus `1.6.47-rc3-wsi2` for WSI), `bundle_gate.py` against a 1.6.47 snapshot, the self-updater 1.6.47 → 1.6.48. After promotion, merge the release branch back into `roberto` with a merge commit (#1804 did it for 1.6.47).
+2. **`tool_sweep.py` on a source checkout:** seed each recipe's `config/` from `lib/config_defaults` when the folder being swept has none. On 23 Nov a source sweep ran about 40 recipes with no language set (VADER: "your language is ''"), so it could not stand in for a zip sweep.
+3. **Checks before the tag** (§14): tool sweep of the candidate against **1.6.47** (sweep the published 1.6.47 zip first; until then `~/Documents/NLP_output/tool_sweep/1.6.47-rc2` plus `1.6.47-rc3-wsi2` for WSI), `bundle_gate.py` against a 1.6.47 snapshot, the self-updater 1.6.47 → 1.6.48. After promotion, merge the release branch back into `roberto` with a merge commit (#1804 did it for 1.6.47).
 
 ## 1.6.49: Tcl/Tk 9, and the newest CPython 3.11 (§3.3)
 
