@@ -175,3 +175,74 @@ def test_each_template_defines_the_edge_colours_it_uses():
         start = before.rfind("new vis.Network(")
         assert start >= 0
         assert "var origEdgeColors = {{}};" in before[start:], "template at offset %d" % m.start()
+
+
+# ---- #1779: TimeMapper on pandas 2, Comparative bar charts, PC-ACE time chart ----
+# pandas 2 names value_counts().reset_index()'s columns [var, "count"], not ["index", var], so the old
+# .rename(columns={"index": var, var: "Frequency"}) left no "Frequency" column: TimeMapper (Data visualization's
+# dynamic time chart, and the PC-ACE time chart, which called a charts_util.timechart that no longer existed)
+# stopped with KeyError. "Comparative bar charts" called a charts_util.comparative_bar_charts that never existed.
+
+import _real_pandas  # noqa: E402
+
+
+@pytest.fixture
+def real_pd():
+    try:
+        pd, saved = _real_pandas.swap_in()
+    except ImportError as exc:
+        pytest.skip(f"real pandas not available: {exc}")
+    yield pd
+    _real_pandas.swap_out(saved)
+
+
+def _chart_namespace(pd):
+    import re
+
+    ns = {"pd": pd, "re": re, "os": os, "mb": MagicMock(), "px": MagicMock(), "go": MagicMock()}
+    ns["IO_csv_util"] = MagicMock()
+    ns["IO_csv_util"].get_csvfile_headers.side_effect = lambda path: list(pd.read_csv(path, nrows=0).columns)
+    _function("charts_util.py", "frequency_table", ns)
+    return ns
+
+
+def test_frequency_table_has_var_and_frequency_columns(real_pd):
+    ft = _function("charts_util.py", "frequency_table", {"pd": real_pd})
+    table = ft(["a", "b", "a"], "Word")
+    assert list(table.columns) == ["Word", "Frequency"]
+    assert dict(zip(table["Word"], table["Frequency"], strict=True)) == {"a": 2, "b": 1}
+
+
+def test_time_mapper_counts_each_year(real_pd, tmp_path):
+    csv = tmp_path / "dates.csv"
+    real_pd.DataFrame(
+        {"Date": ["03-04-1890", "05-06-1890", "07-08-1891"], "Event": ["Lynching", "Riot", "Lynching"]}
+    ).to_csv(csv, index=False)
+    ns = _chart_namespace(real_pd)
+    time_mapper = _function("charts_util.py", "TimeMapper", ns)
+    out = str(tmp_path / "t.html")
+    assert time_mapper(str(csv), out, "Event", "mm-dd-yyyy", cumulative=False, yearly=True) == out
+    frame = ns["px"].bar.call_args.args[0]
+    counts = {(r.date, r.Event): r.Frequency for r in frame.itertuples()}
+    assert counts == {("1890", "Lynching"): 1, ("1890", "Riot"): 1, ("1891", "Lynching"): 1, ("1891", "Riot"): 0}
+
+
+def test_comparative_bar_charts_one_bar_series_per_file(real_pd, tmp_path):
+    for name, labels in (("vader.csv", ["pos", "neg", "pos"]), ("bert.csv", ["neg", "neg"])):
+        real_pd.DataFrame({"Sentiment label": labels}).to_csv(tmp_path / name, index=False)
+    ns = _chart_namespace(real_pd)
+    comparative = _function("charts_util.py", "comparative_bar_charts", ns)
+    out = comparative([str(tmp_path / "vader.csv"), str(tmp_path / "bert.csv")], str(tmp_path), "Sentiment label")
+    assert out == str(tmp_path / "NLP_comparative_bar_chart_Sentiment_label.html")
+    bars = {c.kwargs["name"]: dict(zip(c.kwargs["x"], c.kwargs["y"], strict=True)) for c in ns["go"].Bar.call_args_list}
+    assert bars == {"vader": {"pos": 2, "neg": 1}, "bert": {"neg": 2}}
+    ns["go"].Figure.return_value.write_html.assert_called_once_with(out)
+
+
+def test_comparative_bar_charts_warns_on_a_missing_column(real_pd, tmp_path):
+    real_pd.DataFrame({"Other": [1]}).to_csv(tmp_path / "a.csv", index=False)
+    real_pd.DataFrame({"Sentiment label": ["pos"]}).to_csv(tmp_path / "b.csv", index=False)
+    ns = _chart_namespace(real_pd)
+    comparative = _function("charts_util.py", "comparative_bar_charts", ns)
+    assert comparative([str(tmp_path / "a.csv"), str(tmp_path / "b.csv")], str(tmp_path), "Sentiment label") is None
+    assert "a.csv" in ns["mb"].showwarning.call_args.kwargs["message"]

@@ -24,7 +24,6 @@ import warnings
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
@@ -1412,44 +1411,38 @@ def complete_sentence_index(file_path):
 # datalist is list of algorithms
 # var is variable of choice
 # ntopchoices is the n max values
-def multiple_barchart(datalist, outputFilename, var, ntopchoices):
-    if pd.__version__[0] == "2":
-        mb.showwarning(
-            title="Warning",
-            message="The multiple_barchart algorithm is incompatible with a version of pandas higher than 2.0\n\nIn command line, please, pip unistall pandas and pip install pandas==1.5.2 (or even pip install pandas==1.4.4).\n\nMake sure you are in the right NLP environment by typing conda activate NLP",
-        )
-        return
+def frequency_table(values, var):
+    """How often each value occurs, as a DataFrame with the columns [var, "Frequency"], most frequent first.
 
-    tempdatalist = []
-    for i in datalist:
-        tempdatalist.append(pd.read_csv(i, encoding="utf-8", on_bad_lines="skip"))
-    newDatalist = []
-    for i in tempdatalist:
-        newDatalist.append(
-            pd.DataFrame(i[var].value_counts())
-            .reset_index()
-            .rename(columns={"index": var, var: "Frequency"})
-            .head(ntopchoices)
-        )
-    fig = make_subplots(rows=2, cols=int(len(datalist) / 2) + len(datalist) % 2)
-    cols = 1
-    for i in range(0, len(newDatalist)):
-        if i < int(len(datalist) / 2) + len(datalist) % 2:
-            fig.add_trace(
-                go.Bar(x=newDatalist[i][var], y=newDatalist[i]["Frequency"], name="Algorithm " + str(i + 1)),
-                row=1,
-                col=cols,
+    value_counts().reset_index() names its columns ["index", var] on pandas 1 and [var, "count"] on pandas 2, so
+    code that renamed them for pandas 1 lost the "Frequency" column on pandas 2 (#1779).
+    """
+    counts = pd.Series(values).value_counts()
+    return pd.DataFrame({var: counts.index, "Frequency": counts.to_numpy()})
+
+
+def comparative_bar_charts(csv_files, outputDir, var, top_n=20):
+    """Data visualization, Categorical tab, "Comparative bar charts": the same csv field in several csv files.
+
+    One grouped bar chart: a bar series per file (named after the file), the top_n most frequent values of var in
+    each. Returns the html file, or None (with a warning) when a file lacks var.
+    """
+    frames = []
+    for path in csv_files:
+        df = pd.read_csv(path, encoding="utf-8", on_bad_lines="skip")
+        if var not in df.columns:
+            mb.showwarning(
+                title="Comparative bar charts",
+                message=f'The csv file {os.path.basename(path)} has no field "{var}".\n\n'
+                "Every file compared must have the selected field. Please, check your files and try again.",
             )
-            cols = cols + 1
-    cols = 1
-    for i in range(0, len(newDatalist)):
-        if i >= int(len(datalist) / 2) + len(datalist) % 2:
-            fig.add_trace(
-                go.Bar(x=newDatalist[i][var], y=newDatalist[i]["Frequency"], name="Algorithm " + str(i + 1)),
-                row=2,
-                col=cols,
-            )
-            cols = cols + 1
+            return None
+        frames.append((os.path.splitext(os.path.basename(path))[0], frequency_table(df[var].dropna(), var).head(top_n)))
+    fig = go.Figure([go.Bar(x=list(t[var]), y=list(t["Frequency"]), name=name) for name, t in frames])
+    fig.update_layout(barmode="group", title=f"{var}: frequencies compared across files", xaxis_title=var)
+    fig.update_yaxes(title="Frequency")
+    safe = re.sub(r'[<>:"/\\|?*\s]+', "_", var)
+    outputFilename = os.path.join(outputDir, f"NLP_comparative_bar_chart_{safe}.html")
     fig.write_html(outputFilename)
     return outputFilename
 
@@ -2294,9 +2287,7 @@ def TimeMapper(data, outputFilename, var, date_format_var, cumulative, monthly=N
                 subset = data[data[time_col] <= period]
             else:
                 subset = data[data[time_col] == period]
-            tester = (
-                pd.DataFrame(subset[var].value_counts()).reset_index().rename(columns={"index": var, var: "Frequency"})
-            )
+            tester = frequency_table(subset[var], var)
             # Ensure all categories are present in every frame
             for j in set(data[var]):
                 if j not in set(tester[var]):

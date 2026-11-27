@@ -14,9 +14,6 @@ SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
 
 # Left as they are, with the reason. Shrink this list; never grow it for new code.
 KNOWN = {
-    "data_visualization_main.py: charts_util.comparative_bar_charts": "#1779",
-    "DB_PCACE_data_analysis_main.py: charts_util.timechart": "#1779",
-    "IO_files_util.py: reminders_util.generate_reminder_list": "#1779",
     # guarded by hasattr(GUI_IO_util, "outputDirPath")
     "language_tools_advisor_util.py: GUI_IO_util.outputDirPath": "guarded",
 }

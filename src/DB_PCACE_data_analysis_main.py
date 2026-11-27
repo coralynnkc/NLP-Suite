@@ -379,13 +379,13 @@ def _run_analysis():
                         )
                         parent_names = DB_PCACE_data_analysis_util.get_setup_simplex_parent(setup_simplex)
                         var_name = parent_names[0] if parent_names else "Object"
-                        charts_util.timechart(
+                        charts_util.TimeMapper(
                             timechart_csv, timechart_output, var_name, date_fmt, cumulative=False, yearly=True
                         )
                         if os.path.isfile(timechart_output):
                             filesToOpen.append(timechart_output)
                 except Exception as e:
-                    print(f"  Timechart generation skipped: {e}")
+                    mb.showwarning(title="Timechart", message=f"The time chart could not be made.\n\n{e}")
             else:
                 mb.showwarning(
                     title="Timechart",
