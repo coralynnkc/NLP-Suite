@@ -26,7 +26,8 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # Copied from ctk/phase1-grid for the Tk 9 Windows check: src/ is two levels up; output goes to $GALLERY_OUT.
 _SRC = os.path.join(os.path.dirname(os.path.dirname(_HERE)), "src")
-_OUT = os.environ.get("GALLERY_OUT", os.path.join(_HERE, "out"))
+# absolute: the worker runs in src/, so a relative path put the screenshots under src/ (run 46140217149)
+_OUT = os.path.abspath(os.environ.get("GALLERY_OUT", os.path.join(_HERE, "out")))
 _SHOTS = os.path.join(_OUT, "gui_screenshots")
 _NOT_GUI = ("NLP_setup_",)
 
@@ -184,6 +185,8 @@ def main():
         except subprocess.TimeoutExpired:
             p = None
         out = p.stdout if p else ""
+        shot = next((ln for ln in out.splitlines() if ln.startswith("SHOT")), "SHOT? (no line)")
+        print("   ", f, shot[:100])
         meta = next((ln for ln in out.splitlines() if ln.startswith("META")), "")
         overflow = overlaps = None
         title = ""
