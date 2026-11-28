@@ -171,3 +171,43 @@ def test_files_named_after_the_time_they_were_written_are_compared_by_count(tmp_
     base = _sweep(tmp_path, "base", rec, {name.format("03_25_46"): "k\n1\n"})
     later = _sweep(tmp_path, "later", rec, {name.format("04_40_30"): "k\n1\n"})
     assert tc.compare_sweeps(base, later)[0][1] == []
+
+
+# ---- seed_config: a source checkout's config/ ----
+import tool_sweep  # noqa: E402
+
+_PL = "NLP_default_package_language_config.csv"
+_HEAD = "Parser & annotators,Parsers,Basic functions (tokenizer/lemmatizer),Corpus language,Language encoding\n"
+
+
+def _checkout(tmp_path, config=None):
+    defaults = tmp_path / "suite" / "lib" / "config_defaults"
+    defaults.mkdir(parents=True)
+    (defaults / _PL).write_text(_HEAD + "Stanza,Dependency parser,Stanza,English,utf-8\n", encoding="utf-8")
+    (defaults / "NLP_default_IO_config.csv").write_text("io\n", encoding="utf-8")
+    if config is not None:
+        (tmp_path / "suite" / "config").mkdir()
+        for fn, text in config.items():
+            (tmp_path / "suite" / "config" / fn).write_text(text, encoding="utf-8")
+    return str(tmp_path / "suite"), str(tmp_path / "sweep" / "_config" / "r")
+
+
+def _row(config_dir):
+    with open(os.path.join(config_dir, _PL), encoding="utf-8") as f:
+        return f.read().splitlines()[1]
+
+
+def test_seed_config_without_a_config_folder_uses_the_defaults(tmp_path):
+    bundle, config_dir = _checkout(tmp_path)
+    tool_sweep.seed_config(bundle, config_dir)
+    assert sorted(os.listdir(config_dir)) == ["NLP_default_IO_config.csv", _PL]
+    assert _row(config_dir) == "Stanza,Dependency parser,Stanza,English,utf-8"
+
+
+def test_seed_config_keeps_the_own_config_and_fills_a_blank_package_and_language(tmp_path):
+    bundle, config_dir = _checkout(tmp_path, {_PL: _HEAD + ",,spaCy,,\n", "extra.csv": "mine\n"})
+    tool_sweep.seed_config(bundle, config_dir)
+    assert _row(config_dir) == "Stanza,,spaCy,English,utf-8"  # the parsers cell is left as it was
+    assert sorted(os.listdir(config_dir)) == ["NLP_default_IO_config.csv", _PL, "extra.csv"]
+    with open(os.path.join(bundle, "config", _PL), encoding="utf-8") as f:
+        assert ",,spaCy,," in f.read()  # the checkout's own file is not touched
