@@ -76,3 +76,34 @@ _HEAVY_STUBS = [
 
 for _name in _INFRA_STUBS + _HEAVY_STUBS:
     sys.modules.setdefault(_name, MagicMock())
+
+
+# ---------------------------------------------------------------- no real dialogs
+# tkinter is real under pytest, so a test that reaches an unmocked mb.showwarning (or askyesno...) opens a
+# real dialog on the developer's screen and the run waits for a click: on 27 Nov a full run sat for 30 min
+# on "BERTopic found too few topics" from test_reproducible_topics_wsi. Every dialog is replaced by a recorder
+# for each test, and a test that would have shown one fails, naming it. A test that expects a dialog patches it
+# itself (patch.object(module.mb, "showwarning")), which takes precedence while it runs.
+import tkinter.messagebox as _mb  # noqa: E402
+
+import pytest  # noqa: E402
+
+_DIALOGS = {"showinfo": "ok", "showwarning": "ok", "showerror": "ok", "askquestion": "no"}
+_DIALOGS.update(dict.fromkeys(("askyesno", "askokcancel", "askretrycancel", "askyesnocancel"), False))
+
+
+@pytest.fixture(autouse=True)
+def _no_real_dialogs(monkeypatch):
+    shown = []
+
+    def recorder(kind, answer):
+        def show(title=None, message=None, **_):
+            shown.append(f"{kind}({title!r}): {' '.join(str(message).split())[:120]}")
+            return answer
+
+        return show
+
+    for kind, answer in _DIALOGS.items():
+        monkeypatch.setattr(_mb, kind, recorder(kind, answer))
+    yield
+    assert not shown, "the code under test would have opened a real dialog (mock it):\n" + "\n".join(shown)
