@@ -758,7 +758,7 @@ def open_GUI(*args):
         run_script_util.run_script("wordclouds_main.py")
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 extra_GUIs_var.set(0)
 extra_GUIs_checkbox = tk.Checkbutton(
@@ -1098,8 +1098,8 @@ def activate_csv_fields_relational_selection(comingFromPlus=False):
         reset_button_relational.config(state="disabled")
 
 
-csv_field_relational_var.trace("w", callback=lambda x, y, z: activate_csv_fields_relational_selection())
-dynamic_network_field_var.trace("w", callback=lambda x, y, z: activate_csv_fields_relational_selection())
+csv_field_relational_var.trace_add("write", callback=lambda x, y, z: activate_csv_fields_relational_selection())
+dynamic_network_field_var.trace_add("write", callback=lambda x, y, z: activate_csv_fields_relational_selection())
 
 
 # ── Tab 2: Categorical ───────────────────────────────────────────────────────
@@ -1273,7 +1273,7 @@ def activate_filtering_options(*args):
         base_param.configure(state="normal")
 
 
-filter_options_var.trace("w", activate_filtering_options)
+filter_options_var.trace_add("write", activate_filtering_options)
 
 # Colormap row
 tab_help(
@@ -1321,7 +1321,7 @@ def activate_color_1_palette(*args):
         pass
 
 
-color_1_var.trace("w", activate_color_1_palette)
+color_1_var.trace_add("write", activate_color_1_palette)
 
 color_2_var.set(0)
 color_2_style_var_list.append("")
@@ -1349,7 +1349,7 @@ def activate_color_2_palette(*args):
         pass
 
 
-color_2_var.trace("w", activate_color_2_palette)
+color_2_var.trace_add("write", activate_color_2_palette)
 
 data_transformation_lb = tk.Label(tab_categorical, text="Normalize")
 data_transformation_lb.place(x=640, y=118)
@@ -1454,7 +1454,7 @@ def activate_csv_fields_categorical_selection(comingFromPlus=True):
     activate_all_options()
 
 
-categorical_menu_var.trace("w", callback=lambda x, y, z: activate_csv_fields_categorical_selection())
+categorical_menu_var.trace_add("write", callback=lambda x, y, z: activate_csv_fields_categorical_selection())
 
 
 # ── Tab 3: Temporal ───────────────────────────────────────────────────────────
@@ -1630,7 +1630,7 @@ def check_selected_csv_file_field_Y_axis_list(main_Y_axis):
         csv_file_field_Y_axis_list.append(field_value)
 
 
-csv_field_visualization_var.trace("w", lambda x, y, z: check_selected_csv_file_field_Y_axis_list(True))
+csv_field_visualization_var.trace_add("write", lambda x, y, z: check_selected_csv_file_field_Y_axis_list(True))
 
 # Excel/Plotly row
 tab_help(
@@ -1740,7 +1740,7 @@ def activate_split_options(*args):
         csv_field_boxplot_color_menu.configure(state="disabled")
 
 
-split_data_byCategory_var.trace("w", activate_split_options)
+split_data_byCategory_var.trace_add("write", activate_split_options)
 
 # Bubble chart row
 tab_help(
@@ -2202,7 +2202,7 @@ def on_inputFilename_change(*args):
     changed_filename(f)
 
 
-GUI_util.inputFilename.trace("w", lambda x, y, z: on_inputFilename_change())
+GUI_util.inputFilename.trace_add("write", lambda x, y, z: on_inputFilename_change())
 
 
 # ── activate_all_options ──────────────────────────────────────────────────────
@@ -2350,10 +2350,10 @@ def activate_all_options(*args):
 
 activate_all_options()
 
-relations_menu_var.trace("w", activate_all_options)
-visualizations_menu_var.trace("w", activate_all_options)
-categorical_menu_var.trace("w", activate_all_options)
-temporal_menu_var.trace("w", activate_all_options)
+relations_menu_var.trace_add("write", activate_all_options)
+visualizations_menu_var.trace_add("write", activate_all_options)
+categorical_menu_var.trace_add("write", activate_all_options)
+temporal_menu_var.trace_add("write", activate_all_options)
 
 
 # ── Run command (tab-aware) ───────────────────────────────────────────────────

@@ -366,8 +366,8 @@ def activate_options(*args):
         # 	copy_checkbox.config(state='normal')
 
 
-copy_var.trace("w", activate_options)
-move_var.trace("w", activate_options)
+copy_var.trace_add("write", activate_options)
+move_var.trace_add("write", activate_options)
 
 
 def activate_find_options(*args):
@@ -388,7 +388,7 @@ def activate_find_options(*args):
         matching_checkbox.config(text="Exact match", state="disabled")
 
 
-find_var.trace("w", activate_find_options)
+find_var.trace_add("write", activate_find_options)
 
 activate_find_options()
 
@@ -406,7 +406,7 @@ def activate_numberEmbeddedItems_options(*args):
         include_exclude_checkbox.config(state="normal")
 
 
-matching_var.trace("w", activate_numberEmbeddedItems_options)
+matching_var.trace_add("write", activate_numberEmbeddedItems_options)
 activate_numberEmbeddedItems_options()
 
 videos_lookup = {"No videos available": ""}

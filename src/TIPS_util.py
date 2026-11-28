@@ -91,7 +91,7 @@ def trace_open_tips(field_local, menu_local, lookup_local):
     field = field_local
     lookup = lookup_local
     menu = menu_local
-    field.trace("w", TIPS_Tracer)
+    field.trace_add("write", TIPS_Tracer)
 
 
 def open_TIPS(selected_TIPS):

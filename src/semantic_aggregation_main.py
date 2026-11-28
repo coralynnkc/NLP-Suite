@@ -499,7 +499,7 @@ def open_GUI(*args):
             run_script_util.run_script("word2vec_main.py")
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 lexical_category_lb = tk.Label(window, text="Lexical categories ")
 y_multiplier_integer = GUI_IO_util.placeWidget(
@@ -892,8 +892,8 @@ def add_wordNet_keyword(*args):
         activate_all_options(noun_verb_menu_var.get())
 
 
-keyWord_var.trace("w", add_wordNet_keyword)
-keyWord_entry_var.trace("w", add_wordNet_keyword)
+keyWord_var.trace_add("write", add_wordNet_keyword)
+keyWord_entry_var.trace_add("write", add_wordNet_keyword)
 
 annotate_file_var.set(0)
 annotate_file_checkbox = tk.Checkbutton(
@@ -1183,8 +1183,8 @@ def setNounVerbMenu(*args):
     # print('hidden_noun_lemma_csv, hidden_verb_lemma_csv',hidden_noun_lemma_csv.get(), hidden_verb_lemma_csv.get())
 
 
-noun_verb_menu_var.trace("w", setNounVerbMenu)
-knowledge_base_menu_var.trace("w", setNounVerbMenu)
+noun_verb_menu_var.trace_add("write", setNounVerbMenu)
+knowledge_base_menu_var.trace_add("write", setNounVerbMenu)
 
 setNounVerbMenu()
 
@@ -1219,7 +1219,7 @@ def refresh_annotate_state(*args):
         pass
 
 
-csv_file_var.trace("w", refresh_annotate_state)
+csv_file_var.trace_add("write", refresh_annotate_state)
 
 videos_lookup = {"No videos available": ""}
 videos_options = "No videos available"
@@ -1419,7 +1419,7 @@ def activate_NLP_options(*args):
         do_not_repeat_language_warning = True
 
 
-GUI_util.setup_menu.trace("w", activate_NLP_options)
+GUI_util.setup_menu.trace_add("write", activate_NLP_options)
 
 activate_NLP_options()
 GUI_util.window.mainloop()

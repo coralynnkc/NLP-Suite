@@ -580,7 +580,7 @@ def open_GUI(*args):
         run_script_util.run_script("DB_PCACE_data_analysis_main.py")
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 fileName_embeds_date_checkbox = tk.Checkbutton(
     window, text="Filename embeds date", state="disabled", variable=fileName_embeds_date, onvalue=1, offvalue=0
@@ -773,7 +773,7 @@ def activate_dateOptions(*args):
         date_position_var_menu.configure(width=4, state="normal")
 
 
-fileName_embeds_date.trace("w", activate_dateOptions)
+fileName_embeds_date.trace_add("write", activate_dateOptions)
 
 
 def activate_fileName_wellFormedness(*args):
@@ -804,7 +804,7 @@ def activate_fileName_wellFormedness(*args):
         plagiarist_checkbox.configure(state="disabled")
 
 
-check_filename_var.trace("w", activate_fileName_wellFormedness)
+check_filename_var.trace_add("write", activate_fileName_wellFormedness)
 
 
 def activate_characterHomeOptions(*args):
@@ -832,7 +832,7 @@ def activate_characterHomeOptions(*args):
         NER_var.set(0)
 
 
-character_home_var.trace("w", activate_characterHomeOptions)
+character_home_var.trace_add("write", activate_characterHomeOptions)
 
 
 def activate_CharacterOptions(*args):
@@ -858,7 +858,7 @@ def activate_CharacterOptions(*args):
         similarityIndex_Intruder_menu.configure(state="disabled")
 
 
-character_var.trace("w", activate_CharacterOptions)
+character_var.trace_add("write", activate_CharacterOptions)
 
 
 def activate_missingCharacterOptions(*args):
@@ -883,7 +883,7 @@ def activate_missingCharacterOptions(*args):
         plagiarist_checkbox.configure(state="disabled")
 
 
-missing_character_var.trace("w", activate_missingCharacterOptions)
+missing_character_var.trace_add("write", activate_missingCharacterOptions)
 
 
 def activate_LevenshteinOptions(*args):
@@ -911,7 +911,7 @@ def activate_LevenshteinOptions(*args):
         plagiarist_checkbox.configure(state="disabled")
 
 
-Levenshtein_var.trace("w", activate_LevenshteinOptions)
+Levenshtein_var.trace_add("write", activate_LevenshteinOptions)
 
 
 def activate_intruderOptions(*args):
@@ -937,7 +937,7 @@ def activate_intruderOptions(*args):
         NER_var.set(0)
 
 
-intruder_var.trace("w", activate_intruderOptions)
+intruder_var.trace_add("write", activate_intruderOptions)
 
 
 def activate_filenameEmbedsDate(*args):
@@ -964,7 +964,7 @@ def activate_filenameEmbedsDate(*args):
         fileName_embeds_date_checkbox.configure(state="normal")
 
 
-plagiarist_var.trace("w", activate_filenameEmbedsDate)
+plagiarist_var.trace_add("write", activate_filenameEmbedsDate)
 
 
 # populates date field based on tkinter vars defined in the specific gui (dateVar, formatVar, and positionVar)

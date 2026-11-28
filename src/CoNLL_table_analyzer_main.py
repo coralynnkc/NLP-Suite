@@ -940,7 +940,7 @@ def open_GUI(*args):
             run_script_util.run_script("statistics_txt_main.py")
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 run_parser_var.set(0)
 
@@ -1361,7 +1361,7 @@ def changed_filename(tracedInputFile):
     clear("<Escape>")
 
 
-# GUI_util.inputFilename.trace('w', lambda x, y, z: changed_filename(GUI_util.inputFilename.get()))
+# GUI_util.inputFilename.trace_add('write', lambda x, y, z: changed_filename(GUI_util.inputFilename.get()))
 
 # Begin K / End K sentence-count fields for the 'Beginning-End K sentences analyzer (repetition
 # finder)'. Following the parsers_annotators GUI pattern (which shows 'Include single quotes' only
@@ -1419,8 +1419,8 @@ def show_hide_K_sentence_widgets(*args):
         End_K_sent_entry.place_forget()
 
 
-advanced_analyses.trace("w", show_hide_K_sentence_widgets)
-advanced_analyses_var.trace("w", show_hide_K_sentence_widgets)
+advanced_analyses.trace_add("write", show_hide_K_sentence_widgets)
+advanced_analyses_var.trace_add("write", show_hide_K_sentence_widgets)
 
 all_analyses_checkbox.configure(state="normal")
 searchToken_checkbox.configure(state="normal")
@@ -1785,7 +1785,7 @@ def on_inputFilename_changed(*args):
     changed_filename(tracedInputFile)
 
 
-GUI_util.inputFilename.trace("w", lambda x, y, z: on_inputFilename_changed())
+GUI_util.inputFilename.trace_add("write", lambda x, y, z: on_inputFilename_changed())
 
 activate_all_options()
 

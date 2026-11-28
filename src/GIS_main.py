@@ -836,7 +836,7 @@ def activate_Google_API_geocode(*args):
         restrict_checkbox.configure(state="normal")
 
 
-geocoder_var.trace("w", activate_Google_API_geocode)
+geocoder_var.trace_add("write", activate_Google_API_geocode)
 
 # split lines
 
@@ -947,8 +947,8 @@ def display_txt_file_options(*args):
     return cannotRun
 
 
-inputFilename.trace("w", display_txt_file_options)
-input_main_dir_path.trace("w", display_txt_file_options)
+inputFilename.trace_add("write", display_txt_file_options)
+input_main_dir_path.trace_add("write", display_txt_file_options)
 display_txt_file_options()
 
 
@@ -966,7 +966,7 @@ def activate_geocoder(*args):
             return
 
 
-geocode_locations_var.trace("w", activate_geocoder)
+geocode_locations_var.trace_add("write", activate_geocoder)
 
 
 def call_reminders(*args):
@@ -980,7 +980,7 @@ def call_reminders(*args):
         return
 
 
-map_locations_var.trace("w", call_reminders)
+map_locations_var.trace_add("write", call_reminders)
 
 GIS_package_lb = tk.Label(window, text="Software")
 y_multiplier_integer = GUI_IO_util.placeWidget(
@@ -1123,7 +1123,7 @@ def activate_Google_API_Google_Maps(*args):
             GIS_package_var.set("Google Earth Pro")
 
 
-GIS_package_var.trace("w", activate_Google_API_Google_Maps)
+GIS_package_var.trace_add("write", activate_Google_API_Google_Maps)
 
 
 def display_reminder(*args):
@@ -1136,7 +1136,7 @@ def display_reminder(*args):
         return
 
 
-Google_Earth_OpenGUI.trace("w", display_reminder)
+Google_Earth_OpenGUI.trace_add("write", display_reminder)
 
 videos_lookup = {"GIS: From texts to maps": "https://www.youtube.com/watch?v=kIgXoxa6Az0"}
 videos_options = "GIS: From texts to maps"

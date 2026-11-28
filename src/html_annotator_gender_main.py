@@ -658,10 +658,10 @@ def activate_all_options(*args):
     #     new_SS_select_button.config(state='disabled')
 
 
-CoreNLP_gender_annotator_var.trace("w", activate_all_options)
-annotator_dictionary_var.trace("w", activate_all_options)
-plot_var.trace("w", activate_all_options)
-year_state_var.trace("w", activate_all_options)
+CoreNLP_gender_annotator_var.trace_add("write", activate_all_options)
+annotator_dictionary_var.trace_add("write", activate_all_options)
+plot_var.trace_add("write", activate_all_options)
+year_state_var.trace_add("write", activate_all_options)
 
 activate_all_options()
 

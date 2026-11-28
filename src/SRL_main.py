@@ -212,7 +212,7 @@ def open_GUI(*args):
             )
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 SRL_var.set(1)
 SRL_checkbox = tk.Checkbutton(window, variable=SRL_var, onvalue=1, offvalue=0)

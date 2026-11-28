@@ -4,6 +4,9 @@ The most recent release is at the top. Each release's bullets are shown as **"Wh
 on the corresponding GitHub Release page (the top section is added automatically by the
 release workflow). Keep the newest version's section at the very top and update it before tagging.
 
+## Unreleased
+- **Ready for Tcl/Tk 9 (behind the scenes).** Every window now watches its menus and checkboxes the way both Tcl/Tk 8.6 and 9 support (286 places), so the NLP Suite can move to the newest Python 3.11 builds, which come only with Tcl/Tk 9. Nothing changes on the current version.
+
 ## v1.6.48
 - **The automatic update no longer gives up on a computer that is slow to start its installer.** It waited 30 seconds for the small program that swaps in the new version, and on a slow Windows start (seen on a test machine, where PowerShell took 30 seconds) it reported "the program that installs the new version did not start" and deleted the download while that program was starting, so the update failed. It now waits up to two minutes, and if it does give up, the installer can no longer start afterwards and find nothing to install. This protects updates from this version on; your current version still works if an update fails.
 - **The same result every time: noun and verb lists, and spelling corrections.** The CoNLL table analyzer's noun and verb lists (and the WordNet, FrameNet and VerbNet tables and charts built from them) listed the same words in a different order on each RUN; they are now in alphabetical order. When two corrections were equally likely, the spelling checker picked either one at random ("Barkskins": "bearskins" or "buckskins"); it now always picks the first in alphabetical order.

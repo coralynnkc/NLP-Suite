@@ -663,7 +663,7 @@ def activate_warning(*args):
         )
 
 
-sentiment_analysis_menu_var.trace("w", activate_warning)
+sentiment_analysis_menu_var.trace_add("write", activate_warning)
 
 corpus_analysis_var.set(0)
 corpus_analysis_checkbox = tk.Checkbutton(
@@ -915,14 +915,14 @@ def check_IO_requirements(inputFilename, inputDir):
     return Error
 
 
-# sentiment_analysis_var.trace('w',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
-# corpus_analysis_var.trace('w',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
-# hierarchical_clustering_var.trace('w',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
-# SVD_var.trace('w',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
-# NMF_var.trace('w',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
+# sentiment_analysis_var.trace_add('write',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
+# corpus_analysis_var.trace_add('write',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
+# hierarchical_clustering_var.trace_add('write',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
+# SVD_var.trace_add('write',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
+# NMF_var.trace_add('write',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
 #
-# GUI_util.inputFilename.trace('w',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
-# GUI_util.input_main_dir_path.trace('w',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
+# GUI_util.inputFilename.trace_add('write',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
+# GUI_util.input_main_dir_path.trace_add('write',lambda x, y, z: check_IO_requirements(GUI_util.inputFilename.get(),GUI_util.input_main_dir_path.get()))
 
 videos_lookup = {"No videos available": ""}
 videos_options = "No videos available"
@@ -964,7 +964,7 @@ def display_reminder(*args):
         )
 
 
-best_topic_estimation_var.trace("w", display_reminder)
+best_topic_estimation_var.trace_add("write", display_reminder)
 
 
 # add all the lines to the end to every special GUI
