@@ -158,7 +158,9 @@ jobs:
           fi
 
           # The tools' GUIs run on this Python's tkinter, checked on Tcl/Tk 9 (see PBS_TAG above)
-          "$PYTHON" -c "import sys, tkinter; v = tkinter.Tcl().eval('info patchlevel'); print('python-env Tcl/Tk', v); sys.exit(0 if v.startswith('9.') else 'python-env has Tcl/Tk ' + v + '; 1.6.49 on is built and checked on Tcl/Tk 9')"
+          # python-build-standalone 20261124: the Mac CPython 3.11.18 carries Tcl/Tk 9, the Windows one Tcl/Tk 8.6.15
+          if [ "$RUNNER_OS" = "macOS" ]; then WANT_TK="9."; else WANT_TK="8.6."; fi
+          "$PYTHON" -c "import sys, tkinter; v = tkinter.Tcl().eval('info patchlevel'); print('python-env Tcl/Tk', v); sys.exit(0 if v.startswith('$WANT_TK') else 'python-env has Tcl/Tk ' + v + ', expected $WANT_TK on $RUNNER_OS')"
           "$PYTHON" -m pip install --upgrade pip
           "$PYTHON" -m pip install --no-cache-dir -r requirements.txt
           if [ "$RUNNER_OS" = "Windows" ]; then
