@@ -3,6 +3,8 @@ name: Build NLP Suite Installers
 # Trigger: manually from the Actions tab, or on tagged releases
 on:
   workflow_dispatch:
+  # tk9-windows-check.yml (test branch only) builds through this workflow
+  workflow_call:
   push:
     tags:
       - 'v*'

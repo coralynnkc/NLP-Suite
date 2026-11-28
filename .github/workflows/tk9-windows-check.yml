@@ -1,0 +1,102 @@
+name: Tk 9 Windows check
+
+# Test branch only, not for merging. PLAN 1.6.49 step 3, on a GitHub Windows runner (100 % scaling):
+# the candidate zip (CPython 3.11.18, Tk 9) against the published 1.6.47 zip (CPython 3.11.14, Tk 8.6).
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/tcl9-gui-upgrades-0fr6u2
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-installers.yml
+    # its release job asks for contents: write; it only runs on a v* tag, never on this branch
+    permissions:
+      contents: write
+
+  check:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 240
+    env:
+      DO_NOT_TRACK: '1'
+      NLP_SILENT: '1'
+      PYTHONIOENCODING: utf-8
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Get the candidate build
+        uses: actions/download-artifact@v8
+        with:
+          name: NLP-Suite-windows-x64
+          path: cand_zip
+
+      - name: Get the published 1.6.47 Windows zip
+        run: curl -fSL -o base.zip https://github.com/NLP-Suite/NLP-Suite/releases/download/v1.6.47/NLP-Suite-windows-x64.zip
+
+      - name: Unzip both
+        run: |
+          set -euo pipefail
+          7z x -y -ocand cand_zip/NLP-Suite-windows-x64.zip > /dev/null
+          7z x -y -obase base.zip > /dev/null
+          for d in cand base; do
+            "$d/NLP_Suite/python-env/python.exe" -c "import sys, tkinter; print('$d', sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
+          done
+          mkdir -p results config
+          cp lib/config_defaults/*.csv config/
+
+      - name: Python with PyInstaller (for the menu archive in bundle_gate)
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: pip install pyinstaller
+
+      - name: DPI and Tk 9 feature probes
+        continue-on-error: true
+        run: |
+          for d in cand base; do
+            PY="$d/NLP_Suite/python-env/python.exe"
+            { "$PY" .github/tk9-check/dpi_probe.py; echo; "$PY" .github/tk9-check/tk9_features_probe.py; } 2>&1 | tee "results/probe-$d.txt"
+          done
+
+      - name: bundle_gate snapshot and compare
+        continue-on-error: true
+        run: |
+          for d in base cand; do
+            python tests/bundle_gate.py snapshot "$d/NLP_Suite" -o "results/bundle-$d.json" --pyinstaller python 2>&1 | tee "results/bundle-$d.log"
+          done
+          python tests/bundle_gate.py compare results/bundle-base.json results/bundle-cand.json 2>&1 | tee results/bundle-compare.txt
+          exit "${PIPESTATUS[0]}"
+
+      - name: gui_layout_gate on both Pythons (same src/)
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          rc=0
+          for d in base cand; do
+            "$d/NLP_Suite/python-env/python.exe" tests/gui_layout_gate.py 2>&1 | tee "results/layout-$d.txt" || rc=1
+            cp tests/gui_layout_gate.log "results/layout-$d.log" || true
+          done
+          exit $rc
+
+      - name: Screenshot gallery on both Pythons
+        continue-on-error: true
+        run: |
+          for d in base cand; do
+            GALLERY_OUT="results/gallery-$d" "$d/NLP_Suite/python-env/python.exe" .github/tk9-check/gui_gallery.py 2>&1 | tee "results/gallery-$d.txt"
+          done
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: tk9-windows-check
+          path: results
+          retention-days: 30
