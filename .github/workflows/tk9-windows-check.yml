@@ -19,6 +19,8 @@ on:
     paths-ignore:
       - .github/workflows/updater-tests.yml
       - .github/workflows/tk9-windows-check.yml
+      - .github/workflows/gui-checks.yml
+      - .github/tk9-check/**
 
 permissions:
   contents: read
@@ -98,7 +100,7 @@ jobs:
           set -o pipefail
           rc=0
           for d in base cand; do
-            "$d/NLP_Suite/${{ matrix.py }}" tests/gui_layout_gate.py 2>&1 | tee "results/layout-$d.txt" || rc=1
+            "$d/NLP_Suite/${{ matrix.py }}" .github/tk9-check/layout_gate.py 2>&1 | tee "results/layout-$d.txt" || rc=1
             cp tests/gui_layout_gate.log "results/layout-$d.log" || true
           done
           exit $rc

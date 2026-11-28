@@ -145,6 +145,10 @@ try:
 except Exception as e:
     print("SHOT_FAIL", str(e)[:120])
 """.replace("{src}", _SRC)
+sys.path.insert(0, _HERE)
+from no_popups import PRELUDE  # noqa: E402  answer every dialog at once (no one clicks on a runner)
+
+_WORKER = PRELUDE + _WORKER
 
 
 def thumb_data_uri(png_path, max_w=680):
