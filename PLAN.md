@@ -9,7 +9,7 @@ What to do before tagging the next release, and what comes after it. The finding
 No dependency changes: `requirements*.txt` and the bundled Python (python-build-standalone `20251217`) stay as in 1.6.47, so the sweep against 1.6.47 shows only what the code changed. In order:
 
 1. **The rest of #1706** (§1.1): the one-off `src/_*.py` scripts, the unused modules, `post_build_fixup.py`, `wiki-draft-About.md`, `build-family-viewer.yml`. The family-viewer worry is settled (23 Nov): the viewer (`family_archive_app.py`, `gedcom_to_csv.py`) moved to a private repo on 16 Jun 2026 and imported only pandas, geopy and the standard library, nothing #1706 deletes; `build-family-viewer.yml` builds two spec files that are no longer in the repo. Rebase #1706 on `roberto`, drop what 1.6.47 already deleted, merge once Roberto agrees.
-2. **Checks before the tag** (§14): tool sweep of the candidate against **1.6.47** (sweep the published 1.6.47 zip first; until then `~/Documents/NLP_output/tool_sweep/1.6.47-rc2` plus `1.6.47-rc3-wsi2` for WSI), `bundle_gate.py` against a 1.6.47 snapshot, the self-updater 1.6.47 → 1.6.48. After promotion, merge the release branch back into `roberto` with a merge commit (#1804 did it for 1.6.47).
+2. **Checks before the tag** (§14): tool sweep of the candidate against **1.6.47**: the published zip was swept on 27 Nov, `~/Documents/NLP_output/tool_sweep/1.6.47` (113 ok, 8 EMPTY, 8 WARNED; against rc2 0 regressions, only tie order, §12.4), `bundle_gate.py` against a 1.6.47 snapshot, the self-updater 1.6.47 → 1.6.48. After promotion, merge the release branch back into `roberto` with a merge commit (#1804 did it for 1.6.47).
 
 ## 1.6.49: Tcl/Tk 9, and the newest CPython 3.11 (§3.3)
 
