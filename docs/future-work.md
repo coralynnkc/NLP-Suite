@@ -248,6 +248,26 @@ Read from the code only: 96 `iterrows()` / row-append patterns in 29 files, most
 
 Every change follows CLAUDE.md: unit tests for new helpers, `pytest tests/`, and `python tests/gui_smoke.py` after any GUI edit.
 
+### 6.11 Re-measured on Python 3.11 (27 Nov 2026)
+
+`tests/startup_bench.py` on the published Mac zips, Apple M2 (8 GB): 1.6.46 (CPython 3.10.15) against 1.6.47 (CPython 3.11.14), each a fresh unzip, three runs per item in a fresh process, the two releases taking turns. "Warm" is the median of runs 2–3; "first" is run 1, a student's first open after unzipping. Raw data: `~/Documents/NLP_output/bench/startup_1.6.46_vs_1.6.47.json` (rebuild the tables with `startup_bench.py report`).
+
+| | 1.6.46 warm | 1.6.47 warm | 1.6.47 / 1.6.46 |
+|---|---|---|---|
+| `python -c pass` | 0.02 s | 0.01 s | 0.50 |
+| `import GUI_util` | 0.88 s | 0.77 s | 0.88 |
+| All 55 GUIs opened, total | 213.4 s | 212.5 s | 1.00 |
+| Light GUIs (about 1 s: file tools, setup GUIs, the menu) | | | mostly 0.66–0.86 (html_annotator 1.17) |
+| Heavy GUIs (5–13 s: style, syntactic, topic modeling, SVO, spell checker, PC-ACE) | | | 0.79 (word2vec) – 1.14 |
+| The 26 heavy libraries alone, total | 32.1 s | 33.7 s | 1.05 |
+
+**What it says.** Python 3.11 made the interpreter and the Suite's own code faster, so most light GUIs open 15–35 % sooner. Heavy GUIs did not, on the whole, get faster, because their time is library import, and the library versions 3.11 brought are a little slower to import: BERTopic 8.6 → 9.7 s, sentence-transformers 4.7 → 5.3 s, Stanza 1.2 → 1.5 s, NLTK 1.1 → 1.3 s (transformers 5 halved, 0.95 → 0.49 s). Overall opening time is unchanged; §6.2–6.3 (import heavy libraries at RUN, not at open) is still the lever.
+
+**The first open after unzipping is the slow one.** Run 1 of each library on a fresh unzip, against warm: BERTopic 40 s (9.7), spaCy 21–26 s (1.2–1.4), scikit-learn 19 s (0.9), seaborn 16 s (1.2), sentence-transformers 13–15 s (5), pandas 13 s (0.3). The same in both releases, and the zip ships its `.pyc` files (22,940 of 23,306 in `site-packages`), so it is not compilation; most likely macOS checking each library file the first time it is loaded. A student pays it once per library, on whichever GUI first imports it: up to about a minute on the first open of a heavy GUI. Not measured on Windows (Defender scans first loads too). A possible fix: after an install or update, import the heavy libraries once in a background process while the welcome screen shows.
+
+**Compared with §6.2–6.3 (Windows, 9 Nov):** `import GUI_util` is 0.8 s here, not 4.6 s, and the heaviest GUI 13 s, not 30–40 s. Part of that is the Mac, part the work since (1.6.44 moved `requests`, #1704 the Stanza model check). Re-measure on Windows before ranking §6.2's fixes again.
+
+
 ## 7. UI overhaul: findings (10 Nov 2026)
 
 **Decision so far:** stay with CustomTkinter (CTk). A TypeScript front end would mean rewriting 55 GUIs and the way they start each other; CTk keeps every `run()` as it is.
@@ -400,6 +420,7 @@ Largest reliability lever. Convert to `except Exception`, and on user-facing pat
 Coverage is 683 test functions in 67 files [3]. Gaps:
 - No **empty-DataFrame** regression test for the chart/statistics pipeline (only the emotion-arc tests in `test_character_emotion_arcs_util.py` cover an empty frame).
 - No **multi-column chart** regression test for `charts_util` (the v1.6.4 "by Document" grouped-bar fix has no test).
+- **`test_hc_runs_on_real_scikit_learn` fails in a full local run** (27 Nov, on `roberto` too), and passes alone: real scipy's import meets a stub another test file left in `sys.modules` (`TypeError: issubclass() arg 2 must be a class` in `scipy.stats._new_distributions`). CI skips it (no scikit-learn there). Find the stub it meets, and hide it the way the test already hides scikit-learn/scipy stubs.
 
 ### 12.7 Hygiene
 
