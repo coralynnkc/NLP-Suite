@@ -17,6 +17,9 @@ for _stream in (sys.stdout, sys.stderr):
 import tkinter as tk
 
 import IO_libraries_util
+import tk9_fonts_util
+
+tk9_fonts_util.apply()  # before the first window: macOS + Tk 9 draws point sizes a third larger
 
 # Load early so the pandas on_bad_lines kwarg works on every pandas version across the whole
 # suite (GUI_util is imported at the top of essentially every script). No-op on pandas >= 1.3.

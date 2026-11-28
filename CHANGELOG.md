@@ -5,7 +5,7 @@ on the corresponding GitHub Release page (the top section is added automatically
 release workflow). Keep the newest version's section at the very top and update it before tagging.
 
 ## Unreleased
-- **Ready for Tcl/Tk 9 (behind the scenes).** Every window now watches its menus and checkboxes the way both Tcl/Tk 8.6 and 9 support (286 places), so the NLP Suite can move to the newest Python 3.11 builds, which come only with Tcl/Tk 9. Nothing changes on the current version.
+- **Ready for Tcl/Tk 9 (behind the scenes).** Every window now watches its menus and checkboxes the way both Tcl/Tk 8.6 and 9 support (286 places), and on a Mac with Tcl/Tk 9 text is drawn at the size the windows were laid out for (Tk 9 draws it a third larger), so the NLP Suite can move to the newest Python 3.11 builds, which come only with Tcl/Tk 9. Nothing changes on the current version.
 
 ## v1.6.47
 - **Security: the NLP Suite now runs on Python 3.11, with Pillow 13 and transformers 5.** These fix every open security advisory in the packages the download installs (Pillow's image decoders, transformers' model loading). The update replaces the whole bundled Python, so it is a larger download than usual. Results should not change; if a tool behaves differently after updating, please report it.

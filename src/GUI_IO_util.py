@@ -9,6 +9,9 @@ from tkinter import ttk
 import tkinter.messagebox as mb
 
 import IO_libraries_util
+import tk9_fonts_util
+
+tk9_fonts_util.apply()  # its popups are built at Tk 8.6 font sizes too (macOS + Tk 9)
 
 # import IO_internet_util
 # import webbrowser
