@@ -14,7 +14,10 @@ No dependency changes: `requirements*.txt` and the bundled Python (python-build-
 
 ## 1.6.49: Tcl/Tk 9, and the newest CPython 3.11 (§3.3)
 
-1.6.47 bundles CPython 3.11.14 from python-build-standalone `20251217`, the last release with Tcl/Tk 8.6. The newest 3.11 (3.11.18, `20261110`) comes only with Tcl/Tk 9, which crashed 54 GUIs at open in the first 1.6.47 candidate. Porting `src/` to Tcl 9 lets the bundled Python take four more CPython patch releases. Its own release, because it touches every GUI. Plan in §3.3.
+1.6.47 bundles CPython 3.11.14 from python-build-standalone `20251217`, the last release with Tcl/Tk 8.6. The newest 3.11 (3.11.18, `20261124`) comes only with Tcl/Tk 9, which crashed 54 GUIs at open in the first 1.6.47 candidate. Porting `src/` to Tcl 9 lets the bundled Python take four more CPython patch releases. Its own release, because it touches every GUI. Where it stands (27 Nov, §3.3):
+1. `chore/tcl9-trace-add`: the 286 traces ported, and `tk9_fonts_util` for Tk 9's larger fonts on the Mac. On a Tcl 9 env every GUI builds (54 crashed before), records the same popups as on 8.6, and the layout gate matches 8.6 (49 of 50; 11 without the font fix). Merges before 1.6.48's tag or after it; it changes nothing on 8.6.
+2. `chore/1.6.49-python-3.11.18` (on top of 1): `PBS_TAG` `20261124`, CPython 3.11.18, Tcl/Tk 9.0.4, the build's Tcl check flipped to 9.
+3. Before the tag: a candidate build, the tool sweep against 1.6.48, the bundle gate, the self-updater 1.6.48 → 1.6.49, and a Windows pass: `gui_layout_gate.py` on the Windows 3.11.18 build at 100 % and at 150 % display scaling, with Tk 8.6 beside it. The Suite does not declare itself DPI-aware; if Tk 9 does on its own, Windows stops scaling the window as one picture and text outgrows the placed coordinates, as on the Mac before `tk9_fonts_util`. Do not tag 1.6.49 before this.
 
 ## Still to check on the published releases
 

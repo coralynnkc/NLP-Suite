@@ -110,17 +110,19 @@ jobs:
         run: |
           set -euo pipefail
           DIST="dist/NLP_Suite/python-env"
-          # 20251217 is the last release whose 3.11 build has Tcl/Tk 8.6. From 20260113 on it is Tcl/Tk 9, which
-          # removed `trace variable`: every GUI that calls .trace("w", ...) (276 calls in src/) crashed at open
-          # (1.6.47 candidate, 23 Nov). Moving to Tcl 9 is its own migration; the check below enforces 8.6.
-          PBS_TAG="20251217"
+          # From 20260113 on, python-build-standalone's 3.11 builds carry Tcl/Tk 9 (20261124: 3.11.18, Tcl 9.0.4).
+          # Tcl 9 removed `trace variable`; src/ uses trace_add since 1.6.49 (tests/test_tk9_compat.py), so the
+          # GUIs run on 9. 1.6.47-1.6.48 stayed on 20251217 (3.11.14, the last with 8.6). The check below
+          # enforces Tcl 9, so a PBS_TAG change cannot slip back to 8.6 unnoticed.
+          PBS_TAG="20261124"
+          PY_VER="3.11.18"
 
           if [ "$RUNNER_OS" = "macOS" ]; then
             ARCH=$(uname -m)
             if [ "$ARCH" = "arm64" ]; then ARCH="aarch64"; fi
-            PBS_URL="https://github.com/indygreg/python-build-standalone/releases/download/${PBS_TAG}/cpython-3.11.14+${PBS_TAG}-${ARCH}-apple-darwin-install_only_stripped.tar.gz"
+            PBS_URL="https://github.com/indygreg/python-build-standalone/releases/download/${PBS_TAG}/cpython-${PY_VER}+${PBS_TAG}-${ARCH}-apple-darwin-install_only_stripped.tar.gz"
           else
-            PBS_URL="https://github.com/indygreg/python-build-standalone/releases/download/${PBS_TAG}/cpython-3.11.14+${PBS_TAG}-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
+            PBS_URL="https://github.com/indygreg/python-build-standalone/releases/download/${PBS_TAG}/cpython-${PY_VER}+${PBS_TAG}-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
           fi
 
           # SHA256 of each file this step may download, copied from that release's SHA256SUMS. The project
@@ -130,8 +132,8 @@ jobs:
           # https://github.com/astral-sh/python-build-standalone/releases/download/<PBS_TAG>/SHA256SUMS
           PBS_FILE="$(basename "$PBS_URL")"
           case "$PBS_FILE" in
-            cpython-3.11.14+20251217-aarch64-apple-darwin-install_only_stripped.tar.gz)  PBS_SHA=a5a4bb1dc3c1beff4a9c07fd35e07e031498b71a5a63d19de383d445d43181c6 ;;
-            cpython-3.11.14+20251217-x86_64-pc-windows-msvc-install_only_stripped.tar.gz) PBS_SHA=4ca2caa73f20bbc3fcd9645de4c8e43aac5119760e446920b41e2f5637a03869 ;;
+            cpython-3.11.18+20261124-aarch64-apple-darwin-install_only_stripped.tar.gz)  PBS_SHA=e9840948169972436f80241773458cdb95923a639f652c01bdc3f1066e45f113 ;;
+            cpython-3.11.18+20261124-x86_64-pc-windows-msvc-install_only_stripped.tar.gz) PBS_SHA=ae1f5a86e700982f23eefec97fd71622a5719b5b7b952c0a43bad94c63a47825 ;;
             *) echo "::error::No SHA256 listed for $PBS_FILE. Add it to this step from the release's SHA256SUMS."; exit 1 ;;
           esac
 
@@ -155,8 +157,8 @@ jobs:
             PYTHON="$DIST/python.exe"
           fi
 
-          # The tools' GUIs run on this Python's tkinter and need Tcl/Tk 8.6 (see PBS_TAG above)
-          "$PYTHON" -c "import sys, tkinter; v = tkinter.Tcl().eval('info patchlevel'); print('python-env Tcl/Tk', v); sys.exit(0 if v.startswith('8.6') else 'python-env has Tcl/Tk ' + v + '; the GUIs need 8.6 (.trace(\"w\", ...) is gone in Tcl 9)')"
+          # The tools' GUIs run on this Python's tkinter, checked on Tcl/Tk 9 (see PBS_TAG above)
+          "$PYTHON" -c "import sys, tkinter; v = tkinter.Tcl().eval('info patchlevel'); print('python-env Tcl/Tk', v); sys.exit(0 if v.startswith('9.') else 'python-env has Tcl/Tk ' + v + '; 1.6.49 on is built and checked on Tcl/Tk 9')"
           "$PYTHON" -m pip install --upgrade pip
           "$PYTHON" -m pip install --no-cache-dir -r requirements.txt
           if [ "$RUNNER_OS" = "Windows" ]; then
