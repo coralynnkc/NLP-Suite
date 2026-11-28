@@ -57,7 +57,7 @@ Ruff (lint + format, line length 120, target py311) and Pyright (standard mode, 
 
 ## Environment
 
-- Use the project's Anaconda environment; library versions are pinned in `requirements*.txt` (see the comments there for why, e.g. Pillow 10.4.0 for Tcl/Tk 8.6).
+- Use the project's Anaconda environment; library versions are pinned in `requirements*.txt` (see the comments there for why, e.g. `pandas<3`, held until its migration).
 - Run: `python src/NLP_menu_main.py`, or one tool: `python src/X_main.py`.
 
 ## Branches and releases
