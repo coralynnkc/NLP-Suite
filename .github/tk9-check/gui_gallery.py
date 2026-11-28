@@ -146,7 +146,7 @@ except Exception as e:
     print("SHOT_FAIL", str(e)[:120])
 """.replace("{src}", _SRC)
 sys.path.insert(0, _HERE)
-from no_popups import PRELUDE  # noqa: E402  answer every dialog at once (no one clicks on a runner)
+from no_popups import PRELUDE, run_bounded  # noqa: E402  answer every dialog at once (no one clicks on a runner)
 
 _WORKER = PRELUDE + _WORKER
 
@@ -180,13 +180,7 @@ def main():
     for f in guis:
         png = os.path.join(_SHOTS, f.replace(".py", ".png"))
         try:
-            p = subprocess.run(
-                [sys.executable, "-c", _WORKER, f, png],
-                capture_output=True,
-                text=True,
-                timeout=300,
-                cwd=_SRC,
-            )
+            p = run_bounded([sys.executable, "-c", _WORKER, f, png], 120, cwd=_SRC)
         except subprocess.TimeoutExpired:
             p = None
         out = p.stdout if p else ""

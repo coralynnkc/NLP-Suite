@@ -22,6 +22,7 @@ env:
   DO_NOT_TRACK: '1'
   NLP_SILENT: '1'
   PYTHONIOENCODING: utf-8
+  PYTHONUNBUFFERED: "1"
 
 jobs:
   check:
