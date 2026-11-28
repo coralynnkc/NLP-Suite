@@ -279,6 +279,18 @@ def test_posix_swap_keeps_the_backup_when_the_user_edited_a_release_file(tmp_pat
 
 
 @posix_only
+def test_posix_swap_that_starts_too_late_changes_nothing(tmp_path):
+    app, paths, _ = _install(tmp_path)
+    (pathlib.Path(paths["stage"]) / su.STARTED_FLAG).write_text("taken by the app, which gave up waiting")
+    code, log = _run_posix_swap(tmp_path, paths)
+    assert code == 0, log
+    assert "nothing was changed" in log
+    assert (app / "lib" / "release_version.txt").read_text().strip() == "1.6.40"
+    assert not os.path.exists(paths["backup"])
+    assert os.path.isdir(os.path.join(paths["stage"], su.APP_FOLDER_IN_ZIP))  # the app deletes it, not the script
+
+
+@posix_only
 def test_posix_swap_puts_the_old_version_back_when_it_fails(tmp_path):
     app, paths, _ = _install(tmp_path)
     code, log = _run_posix_swap(tmp_path, paths, new=os.path.join(paths["stage"], "missing"))
@@ -324,6 +336,18 @@ def test_windows_swap_installs_the_new_release_and_keeps_user_files(tmp_path):
     assert (app / "lib" / "sampleData" / "story.txt").read_text() == "shipped story, 1.6.41"
     assert (pathlib.Path(paths["backup"]) / su.BACKUP_MARKER).is_file()
     assert not os.path.exists(paths["stage"])
+
+
+@windows_only
+def test_windows_swap_that_starts_too_late_changes_nothing(tmp_path):
+    app, paths, _ = _install(tmp_path, exe="NLP_Suite.exe")
+    (pathlib.Path(paths["stage"]) / su.STARTED_FLAG).write_text("taken by the app, which gave up waiting")
+    code, log = _run_windows_swap(tmp_path, paths)
+    assert code == 0, log
+    assert "nothing was changed" in log
+    assert (app / "lib" / "release_version.txt").read_text().strip() == "1.6.40"
+    assert not os.path.exists(paths["backup"])
+    assert os.path.isdir(os.path.join(paths["stage"], su.APP_FOLDER_IN_ZIP))
 
 
 @windows_only
@@ -535,9 +559,27 @@ def test_partial_backup_deletion_keeps_the_marker(tmp_path):
 
 
 def test_swap_script_started(tmp_path):
-    assert not su.swap_script_started(str(tmp_path), timeout=0.2, poll=0.05)
     (tmp_path / su.STARTED_FLAG).write_text("")
     assert su.swap_script_started(str(tmp_path), timeout=0.2, poll=0.05)
+
+
+def test_swap_script_started_takes_the_flag_when_it_gives_up(tmp_path):
+    # A Windows runner took 30 s to start PowerShell (28 Nov 2026): the app gave up at 30 s and deleted the
+    # staging folder while the script was starting, and the script then moved the NLP Suite aside and found
+    # no new version to put in its place. Giving up now takes the flag, so a late script finds it taken.
+    assert not su.swap_script_started(str(tmp_path), timeout=0.2, poll=0.05)
+    assert (tmp_path / su.STARTED_FLAG).is_file()
+
+
+def test_swap_script_started_loses_the_race_to_a_script_that_just_started(tmp_path):
+    # the script takes the flag between the app's last look and its own attempt: the script is running
+    (tmp_path / su.STARTED_FLAG).write_text("")
+    with mock.patch.object(su.os.path, "exists", return_value=False):
+        assert su.swap_script_started(str(tmp_path), timeout=0.1, poll=0.05)
+
+
+def test_swap_script_waits_long_enough_for_a_slow_powershell():
+    assert su.SWAP_START_TIMEOUT >= 120
 
 
 def test_outdated_message_says_what_this_install_does():

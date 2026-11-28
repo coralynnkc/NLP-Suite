@@ -4,6 +4,9 @@ The most recent release is at the top. Each release's bullets are shown as **"Wh
 on the corresponding GitHub Release page (the top section is added automatically by the
 release workflow). Keep the newest version's section at the very top and update it before tagging.
 
+## Unreleased
+- **The automatic update no longer gives up on a computer that is slow to start its installer.** It waited 30 seconds for the small program that swaps in the new version, and on a slow Windows start (seen on a test machine, where PowerShell took 30 seconds) it reported "the program that installs the new version did not start" and deleted the download while that program was starting, so the update failed. It now waits up to two minutes, and if it does give up, the installer can no longer start afterwards and find nothing to install. This protects updates from this version on; your current version still works if an update fails.
+
 ## v1.6.47
 - **Security: the NLP Suite now runs on Python 3.11, with Pillow 13 and transformers 5.** These fix every open security advisory in the packages the download installs (Pillow's image decoders, transformers' model loading). The update replaces the whole bundled Python, so it is a larger download than usual. Results should not change; if a tool behaves differently after updating, please report it.
 - **Removed the 2021 Anaconda setup scripts** (`setup_Windows/`, `setup_Mac/`: STEP1–3, the run and shortcut scripts, the beta readmes) and the files only they used (`src/NLP_setup_shortcut_add.py`, `src/NLP_setup_shortcut_remove.py`, `src/requirements.txt`, `src/requirements_mac.txt`). They installed Python 3.8 with Anaconda 2021.05 and were replaced by the downloadable zip; nothing a tool does changes. The Windows app icon moved to `lib/images/`.
