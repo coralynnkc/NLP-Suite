@@ -6,7 +6,9 @@ What to do before tagging the next release, and what comes after it. The finding
 
 ## Next: 1.6.48, cleanup and what the sweep left
 
-No dependency changes: `requirements*.txt` and the bundled Python (python-build-standalone `20251217`) stay as in 1.6.47, so the sweep against 1.6.47 shows only what the code changed. In order:
+No dependency changes: `requirements*.txt` and the bundled Python (python-build-standalone `20251217`) stay as in 1.6.47, so the sweep against 1.6.47 shows only what the code changed.
+
+**The candidate is `release/v1.6.48`** (28 Nov): #1803 (tests one file per module), #1779 and the categorical charts, the source-checkout sweep config, the dialog-free tests (`fix/tests-no-real-dialogs`), the tie-order fix (`fix/tie-order`, §12.4), the self-updater start race (`fix/updater-swap-start-race-148`, §15), #1706 (`chore/remove-dead-files`), and the version bump. `pytest tests/` 972 passed; `gui_smoke.py` crash list the same as `roberto`'s (Linux).
 
 1. **Checks before the tag** (§14): tool sweep of the candidate against **1.6.47**: the published zip was swept on 27 Nov, `~/Documents/NLP_output/tool_sweep/1.6.47` (113 ok, 8 EMPTY, 8 WARNED; against rc2 0 regressions, only tie order, §12.4), `bundle_gate.py` against a 1.6.47 snapshot, the self-updater 1.6.47 → 1.6.48. After promotion, merge the release branch back into `roberto` with a merge commit (#1804 did it for 1.6.47).
 

@@ -456,6 +456,8 @@ Deleting someone else's remote branch is Roberto's call.
 
 ## 15. The updater: known limits
 
+- **The start race (fixed in 1.6.48).** On a GitHub Windows runner (28 Nov) PowerShell took 30 s to start the swap script; the app gave up at 30 s, said the installer did not start, and deleted the download while the script was starting, which then moved the NLP Suite aside, found nothing to install and moved it back. 1.6.48 waits 120 s and claims the start flag atomically (the app on a timeout, the script as its first act), so a late script changes nothing. Updates *from* 1.6.47 still run 1.6.47's 30 s code: a slow Windows machine may see "the program that installs the new version did not start" once; its NLP Suite keeps working, and the next close tries again.
+
 - **Long paths:** staging is 17 characters deeper than the install; without Windows LongPathsEnabled the deep `node_modules` paths (#1653) fail to unpack. Fails safely with a message. Fix with #1653.
 - No checksum (GitHub's asset `digest` is unused) and no resume of a broken download. Ctrl-C during the download leaves `_update` behind, which blocks updates for 24 h (the message says which folder to delete).
 - GitHub allows 60 unauthenticated API calls an hour per IP; on a shared campus network the exit-time release lookup can get 403. The fallback is the download page with the reason.
