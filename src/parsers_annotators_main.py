@@ -589,7 +589,7 @@ def open_GUI(*args):
             run_script_util.run_script("coreference_main.py")
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 extra_GUIs_var.set(0)
 extra_GUIs_checkbox = tk.Checkbutton(
@@ -718,7 +718,7 @@ def check_CoNLL_table(*args):
         CoNLL_table_analyzer_checkbox_msg.config(text="Do NOT open CoNLL table analyzer GUI")
 
 
-CoNLL_table_analyzer_var.trace("w", check_CoNLL_table)
+CoNLL_table_analyzer_var.trace_add("write", check_CoNLL_table)
 
 check_CoNLL_table()
 
@@ -869,9 +869,9 @@ def activate_annotators_menu(*args):
         Json_checkbox.place_forget()  # invisible
 
 
-parser_var.trace("w", activate_annotators_menu)
-annotators_var.trace("w", activate_annotators_menu)
-annotators_menu_var.trace("w", activate_annotators_menu)
+parser_var.trace_add("write", activate_annotators_menu)
+annotators_var.trace_add("write", activate_annotators_menu)
+annotators_menu_var.trace_add("write", activate_annotators_menu)
 
 activate_annotators_menu()
 
@@ -1086,7 +1086,7 @@ def activate_NLP_options(*args):
         )
 
 
-GUI_util.setup_menu.trace("w", activate_NLP_options)
+GUI_util.setup_menu.trace_add("write", activate_NLP_options)
 activate_NLP_options()
 
 if error:

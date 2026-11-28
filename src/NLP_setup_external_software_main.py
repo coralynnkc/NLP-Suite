@@ -331,7 +331,7 @@ def activate_software_download(*args):
         activate_software_install("download", software_dir, software_url, missing_software, silent)
 
 
-software_download_var.trace("w", activate_software_download)
+software_download_var.trace_add("write", activate_software_download)
 
 
 def activate_software_install(download_install, software_dir, software_url, missing_software, silent=False):
@@ -407,8 +407,8 @@ def activate_software_install(download_install, software_dir, software_url, miss
         software_install_area = software_install_dir_var.get()
 
 
-software_install_var.trace(
-    "w",
+software_install_var.trace_add(
+    "write",
     lambda x, y, z: activate_software_install(
         "", software_install_dir_var.get(), software_website_url_var.get(), "", silent=True
     ),

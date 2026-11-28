@@ -744,7 +744,7 @@ def activate_plus1(*args):
 
 # csv_field_menu.configure(state="disabled")
 # add_field1_button.configure(state='normal')
-csv_field_var.trace("w", activate_plus1)
+csv_field_var.trace_add("write", activate_plus1)
 
 
 def activate_hover_over_field_menu():
@@ -865,7 +865,7 @@ def activate_plus2(*args):
         add_field2_button.configure(state="normal")
 
 
-csv_hover_over_field_var.trace("w", activate_plus2)
+csv_hover_over_field_var.trace_add("write", activate_plus2)
 
 
 def activate_groupBy_field_menu():
@@ -891,7 +891,7 @@ def activate_plus3(*args):
         add_field3_button.configure(state="normal")
 
 
-csv_groupBy_field_var.trace("w", activate_plus3)
+csv_groupBy_field_var.trace_add("write", activate_plus3)
 
 
 def activate_all_options(menu_values, from_csv_field_freq_var=False):
@@ -965,10 +965,10 @@ def activate_all_options(menu_values, from_csv_field_freq_var=False):
     #     n_grams_options_menu.configure(state='disabled')
 
 
-# corpus_statistics_var.trace('w', lambda x, y, z: activate_all_options(menu_values))
-all_csv_stats_var.trace("w", lambda x, y, z: activate_all_options(menu_values))
-csv_field_freq_var.trace("w", lambda x, y, z: activate_all_options(menu_values, True))
-# n_grams_var.trace('w', lambda x, y, z: activate_all_options(menu_values))
+# corpus_statistics_var.trace_add('write', lambda x, y, z: activate_all_options(menu_values))
+all_csv_stats_var.trace_add("write", lambda x, y, z: activate_all_options(menu_values))
+csv_field_freq_var.trace_add("write", lambda x, y, z: activate_all_options(menu_values, True))
+# n_grams_var.trace_add('write', lambda x, y, z: activate_all_options(menu_values))
 
 activate_all_options(menu_values)
 
@@ -1007,7 +1007,7 @@ def changed_filename(*args):
 
 
 # at the bottom of the script after laying out the GUI
-# inputFilename.trace('w',changed_filename)
+# inputFilename.trace_add('write',changed_filename)
 # changed_filename()
 
 # Statistical hypothesis tests row ─────────────────────────────────────────────
@@ -1238,8 +1238,8 @@ def activate_stat_test_options(*args):
         stat_corpus_col_menu.configure(state="disabled")
 
 
-stat_test_var.trace("w", activate_stat_test_options)
-stat_test_menu_var.trace("w", activate_stat_test_options)
+stat_test_var.trace_add("write", activate_stat_test_options)
+stat_test_menu_var.trace_add("write", activate_stat_test_options)
 activate_stat_test_options()
 
 videos_lookup = {"No videos available": ""}
@@ -1384,7 +1384,7 @@ GUI_util.GUI_bottom(
 )
 
 changed_filename()
-inputFilename.trace("w", changed_filename)
+inputFilename.trace_add("write", changed_filename)
 
 # Handover from a launching GUI (e.g. DB_SQL passing the csv its query just produced): land the file
 # pre-selected in the INPUT CSV widget so the user does not have to hunt for it. Done AFTER GUI_bottom so

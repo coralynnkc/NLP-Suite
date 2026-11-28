@@ -1,32 +1,29 @@
 name: Release candidate checks (Windows, Mac)
 
-# Test branch only, not for merging. Builds the candidate zips (build-installers.yml) and checks each
-# against a published release's zip on the same OS (default 1.6.47; pick another when starting it by hand):
-#   check        Tk/DPI probes, bundle_gate snapshot + compare, gui_layout_gate and a screenshot gallery
-#                on both zips' python-env (same src/: this checkout's)
-#   sweep        tests/tool_sweep.py on each zip (its own src/ and python-env), then compare
-#   self-update  the baseline's own updater installs the candidate (docs/future-work.md §14)
+# Before a tag (CLAUDE.md "Testing", PLAN): builds the candidate zips with build-installers.yml and checks
+# each against the published release's zip on the same OS, both run on their own python-env:
+#   check        Tk/DPI probes, bundle_gate snapshot + compare, gui_layout_gate and the screenshot gallery
+#                (tests/, run on each zip's python-env with this checkout's src/), and a summary
+#   sweep        tests/tool_sweep.py on each zip (its own src/), then compare: fails on lost outputs
+#   self-update  the baseline's own updater installs the candidate (.github/release-checks/self_update_check.py)
+# Start it from the Actions tab (Run workflow) on the release branch, with the last published version.
 on:
   workflow_dispatch:
     inputs:
       baseline:
-        description: Published release to compare against (e.g. 1.6.48)
-        default: '1.6.47'
-  push:
-    branches:
-      - claude/tcl9-gui-upgrades-0fr6u2
-    # a push that only changes these does not start the 1-3 hour run (start it from the Actions tab instead)
-    paths-ignore:
-      - .github/workflows/updater-tests.yml
-      - .github/workflows/tk9-windows-check.yml
-      - .github/workflows/gui-checks.yml
-      - .github/tk9-check/**
+        description: Last published release to compare against (e.g. 1.6.48)
+        required: true
+  workflow_call:  # so another workflow can run these checks (the test branch did, 28 Nov)
+    inputs:
+      baseline:
+        type: string
+        required: true
 
 permissions:
   contents: read
 
 env:
-  BASE: ${{ inputs.baseline || '1.6.47' }}
+  BASE: ${{ inputs.baseline }}
   DO_NOT_TRACK: '1'
   NLP_SILENT: '1'
   PYTHONIOENCODING: utf-8
@@ -63,8 +60,8 @@ jobs:
       - name: Unzip both
         run: |
           set -euo pipefail
-          bash .github/tk9-check/unzip_bundle.sh "cand_zip/${{ matrix.artifact }}.zip" cand
-          bash .github/tk9-check/unzip_bundle.sh base.zip base
+          bash .github/release-checks/unzip_bundle.sh "cand_zip/${{ matrix.artifact }}.zip" cand
+          bash .github/release-checks/unzip_bundle.sh base.zip base
           for d in base cand; do
             "$d/NLP_Suite/${{ matrix.py }}" -c "import sys, tkinter; print('$d', open('$d/NLP_Suite/lib/release_version.txt').read().strip(), 'Python', sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
           done
@@ -81,14 +78,23 @@ jobs:
         shell: pwsh
         run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
 
+      - name: Let the zips' Pythons take screenshots on the Mac (Screen Recording permission; may not be allowed)
+        if: runner.os == 'macOS'
+        continue-on-error: true
+        run: |
+          db="/Library/Application Support/com.apple.TCC/TCC.db"
+          for bin in "$(realpath base/NLP_Suite/python-env/bin/python3)" "$(realpath cand/NLP_Suite/python-env/bin/python3)" /usr/sbin/screencapture; do
+            sudo sqlite3 "$db" "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, flags) VALUES ('kTCCServiceScreenCapture', '$bin', 1, 2, 4, 1, 0);" && echo "granted: $bin"
+          done
+
       - name: Tk probes (DPI on Windows only)
         continue-on-error: true
         run: |
           for d in base cand; do
             PY="$d/NLP_Suite/${{ matrix.py }}"
             {
-              if [ "$RUNNER_OS" = "Windows" ]; then "$PY" .github/tk9-check/dpi_probe.py; echo; fi
-              "$PY" .github/tk9-check/tk9_features_probe.py
+              if [ "$RUNNER_OS" = "Windows" ]; then "$PY" .github/release-checks/dpi_probe.py; echo; fi
+              "$PY" .github/release-checks/tk9_features_probe.py
             } 2>&1 | tee "results/probe-$d.txt"
           done
 
@@ -108,7 +114,7 @@ jobs:
           set -o pipefail
           rc=0
           for d in base cand; do
-            "$d/NLP_Suite/${{ matrix.py }}" .github/tk9-check/layout_gate.py 2>&1 | tee "results/layout-$d.txt" || rc=1
+            "$d/NLP_Suite/${{ matrix.py }}" tests/gui_layout_gate.py 2>&1 | tee "results/layout-$d.txt" || rc=1
             cp tests/gui_layout_gate.log "results/layout-$d.log" || true
           done
           exit $rc
@@ -118,7 +124,9 @@ jobs:
         timeout-minutes: 60
         run: |
           for d in base cand; do
-            GALLERY_OUT="results/gallery-$d" "$d/NLP_Suite/${{ matrix.py }}" .github/tk9-check/gui_gallery.py 2>&1 | tee "results/gallery-$d.txt"
+            NLP_GALLERY_NO_BROWSER=1 "$d/NLP_Suite/${{ matrix.py }}" tests/gui_gallery.py 2>&1 | tee "results/gallery-$d.txt"
+            mkdir -p "results/gallery-$d"
+            mv tests/gui_gallery.html tests/gui_screenshots "results/gallery-$d/" 2>/dev/null || true
           done
 
       - name: Summary (probes, bundle_gate verdict, layout and gallery counts)
@@ -169,7 +177,7 @@ jobs:
       - name: Unzip, and get CoreNLP and MALLET for the recipes that need them
         run: |
           set -euo pipefail
-          bash .github/tk9-check/unzip_bundle.sh "zip/${{ matrix.artifact }}.zip" bundle
+          bash .github/release-checks/unzip_bundle.sh "zip/${{ matrix.artifact }}.zip" bundle
           rm -rf zip
           "bundle/NLP_Suite/${{ matrix.py }}" -c "import sys, tkinter; print(sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
           winpath() { if [ "$RUNNER_OS" = "Windows" ]; then cygpath -m "$1"; else echo "$1"; fi; }
@@ -281,7 +289,7 @@ jobs:
       - name: Update ${{ env.BASE }} to the candidate with ${{ env.BASE }}'s own updater
         run: |
           set -o pipefail
-          python .github/tk9-check/self_update_check.py "base_zip/${{ matrix.artifact }}.zip" "cand_zip/${{ matrix.artifact }}.zip" "$RUNNER_TEMP/selfupdate" 2>&1 | tee self-update.txt
+          python .github/release-checks/self_update_check.py "base_zip/${{ matrix.artifact }}.zip" "cand_zip/${{ matrix.artifact }}.zip" "$RUNNER_TEMP/selfupdate" 2>&1 | tee self-update.txt
       - name: Upload the result
         if: always()
         uses: actions/upload-artifact@v7

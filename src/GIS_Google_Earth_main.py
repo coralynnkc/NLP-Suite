@@ -373,7 +373,7 @@ def check_dateFields(*args):
         date_format_menu.config(state="disabled")
 
 
-date_var.trace("w", check_dateFields)
+date_var.trace_add("write", check_dateFields)
 
 
 def reset_all_values():
@@ -534,7 +534,7 @@ def groupSelection(*args):
         csv_field_forGroups_menu.config(state="disabled")
 
 
-group_var.trace("w", groupSelection)
+group_var.trace_add("write", groupSelection)
 
 group_values_lb = tk.Label(window, text="Enter value(s) ")
 y_multiplier_integer = GUI_IO_util.placeWidget(
@@ -905,8 +905,8 @@ def update_specific_icon_menu(icon_var, specific_icon_menu, y_multiplier_integer
     display_icon_image(pic_url, y_multiplier_integer_save)
 
 
-specific_icon_var.trace(
-    "w", callback=lambda x, y, z: update_specific_icon_menu(icon_var, specific_icon_menu, y_multiplier_integer_save)
+specific_icon_var.trace_add(
+    "write", callback=lambda x, y, z: update_specific_icon_menu(icon_var, specific_icon_menu, y_multiplier_integer_save)
 )
 
 
@@ -916,8 +916,8 @@ def activate_specific_icon(icon_var, specific_icon_value_lb, specific_icon_menu,
     update_specific_icon_menu(icon_var, specific_icon_menu, y_multiplier_integer_save)
 
 
-icon_var.trace(
-    "w",
+icon_var.trace_add(
+    "write",
     callback=lambda x, y, z: activate_specific_icon(
         icon_var, specific_icon_value_lb, specific_icon_menu, y_multiplier_integer_save
     ),
@@ -984,7 +984,7 @@ def activate_color_palette(*args):
         color_style_var.set(color_style)
 
 
-color_var.trace("w", activate_color_palette)
+color_var.trace_add("write", activate_color_palette)
 
 
 def activate_name_options(*args):
@@ -1002,7 +1002,7 @@ def activate_name_options(*args):
 
 
 # color_entry.configure(state='disabled')
-name_var.trace("w", activate_name_options)
+name_var.trace_add("write", activate_name_options)
 activate_name_options()
 
 description_var.set(0)
@@ -1114,8 +1114,8 @@ def changed_GIS_filename(*args):
         location_var.set("NER")
 
 
-inputFilename.trace("w", changed_GIS_filename)
-# GUI_util.input_main_dir_path.trace('w', changed_GIS_filename)
+inputFilename.trace_add("write", changed_GIS_filename)
+# GUI_util.input_main_dir_path.trace_add('write', changed_GIS_filename)
 
 # changed_GIS_filename() added at the end after all widgets have been displayed
 
@@ -1150,7 +1150,7 @@ def activate_description_options(*args):
         italic_checkbox.configure(state="disabled")
 
 
-description_var.trace("w", activate_description_options)
+description_var.trace_add("write", activate_description_options)
 activate_description_options()
 
 
@@ -1163,7 +1163,7 @@ def activate_description(*args):
         italic_checkbox.config(state="disabled")
 
 
-description_csv_field_var.trace("w", activate_description)
+description_csv_field_var.trace_add("write", activate_description)
 activate_description()
 
 
@@ -1179,8 +1179,8 @@ def activate_group_options(*args):
     reset_group_button.config(state="normal")
 
 
-specific_icon_var.trace("w", activate_group_options)
-group_var.trace("w", activate_group_options)
+specific_icon_var.trace_add("write", activate_group_options)
+group_var.trace_add("write", activate_group_options)
 activate_group_options()
 
 
@@ -1193,7 +1193,7 @@ def csv_field_forGroups_menu_state(*args):
     group_label_entry.configure(state="normal")
 
 
-group_number_var.trace("w", csv_field_forGroups_menu_state)
+group_number_var.trace_add("write", csv_field_forGroups_menu_state)
 csv_field_forGroups_menu_state()
 
 
@@ -1210,7 +1210,7 @@ def group_values_entry_var_list_update(*args):
 
 
 # print("group_values_entry_var_list",group_values_entry_var_list)
-group_values_entry_var.trace("w", group_values_entry_var_list_update)
+group_values_entry_var.trace_add("write", group_values_entry_var_list_update)
 group_values_entry_var_list_update()
 
 
@@ -1227,7 +1227,7 @@ def group_label_entry_var_list_update(*args):
 
 
 # print("group_label_entry_var_list",group_label_entry_var_list)
-group_label_entry_var.trace("w", group_label_entry_var_list_update)
+group_label_entry_var.trace_add("write", group_label_entry_var_list_update)
 group_label_entry_var_list_update()
 
 
@@ -1239,7 +1239,7 @@ def icon_var_list_update(*args):
 
 
 # print("icon_var_list",icon_var_list)
-icon_var.trace("w", icon_var_list_update)
+icon_var.trace_add("write", icon_var_list_update)
 icon_var_list_update()
 
 
@@ -1251,7 +1251,7 @@ def specific_icon_var_list_update(*args):
 
 
 # print("specific_icon_var_list",specific_icon_var_list)
-specific_icon_var.trace("w", specific_icon_var_list_update)
+specific_icon_var.trace_add("write", specific_icon_var_list_update)
 specific_icon_var_list_update()
 
 
@@ -1262,7 +1262,7 @@ def name_var_list_update(*args):
 
 
 # print("name_var_list",name_var_list)
-name_var.trace("w", name_var_list_update)
+name_var.trace_add("write", name_var_list_update)
 name_var_list_update()
 
 
@@ -1274,7 +1274,7 @@ def scale_var_list_update(*args):
 
 
 # print("scale_var_list",scale_var_list)
-scale_var.trace("w", scale_var_list_update)
+scale_var.trace_add("write", scale_var_list_update)
 scale_var_list_update()
 
 
@@ -1285,7 +1285,7 @@ def color_var_list_update(*args):
 
 
 # print("color_var_list",color_var_list)
-color_var.trace("w", color_var_list_update)
+color_var.trace_add("write", color_var_list_update)
 color_var_list_update()
 
 
@@ -1296,7 +1296,7 @@ def color_style_var_list_update(*args):
 
 
 # print("color_style_var_list",color_style_var_list)
-color_style_var.trace("w", color_style_var_list_update)
+color_style_var.trace_add("write", color_style_var_list_update)
 color_style_var_list_update()
 
 
@@ -1308,7 +1308,7 @@ def description_var_list_update(*args):
 
 
 # print("description_var_list",description_var_list)
-description_var.trace("w", description_var_list_update)
+description_var.trace_add("write", description_var_list_update)
 description_var_list_update()
 
 
@@ -1322,7 +1322,7 @@ def description_csv_field_var_list_update(*args):
 
 
 # print("description_csv_field_var_list",description_csv_field_var_list)
-description_csv_field_var.trace("w", description_csv_field_var_list_update)
+description_csv_field_var.trace_add("write", description_csv_field_var_list_update)
 description_csv_field_var_list_update()
 
 
@@ -1333,7 +1333,7 @@ def italic_var_list_update(*args):
 
 
 # print("italic_var_list",italic_var_list)
-italic_var.trace("w", italic_var_list_update)
+italic_var.trace_add("write", italic_var_list_update)
 italic_var_list_update()
 
 
@@ -1344,7 +1344,7 @@ def bold_var_list_update(*args):
 
 
 # print("bold_var_list",bold_var_list)
-bold_var.trace("w", bold_var_list_update)
+bold_var.trace_add("write", bold_var_list_update)
 bold_var_list_update()
 
 heat_map_var = tk.IntVar()

@@ -19,6 +19,7 @@ Moved out of PLAN.md on 11 Nov 2026. The sections keep their scan dates; nothing
 - [13. Branches](#13-branches)
 - [14. Requirements, release checks and settled decisions](#14-requirements-release-checks-and-settled-decisions)
 - [15. The updater: known limits](#15-the-updater-known-limits)
+- [16. Outdated NLP tools and models (scan of 28 Nov 2026)](#16-outdated-nlp-tools-and-models-scan-of-28-nov-2026)
 
 ---
 
@@ -83,7 +84,7 @@ Each of these was found while testing 1.6.47 and is pinned or patched so that re
 
 | What | Where | Why it is held | To move it |
 |---|---|---|---|
-| Tcl/Tk 8.6: python-build-standalone `20251217`, CPython 3.11.14 | `build-installers.yml` (`PBS_TAG`, and a step that fails the build if python-env's Tcl is not 8.6) | From `20260113` on, the 3.11 builds carry Tcl/Tk 9 (`20261110`: 3.11.18 with 9.0.4). Tcl 9 removed `trace variable`, so every GUI that calls `.trace("w", ...)` crashed at open (54 in the first candidate). 3.11.14 lacks four CPython patch releases | §3.3 (1.6.49) |
+| Tcl/Tk 8.6: python-build-standalone `20251217`, CPython 3.11.14 | `build-installers.yml` (`PBS_TAG`, and a step that fails the build if python-env's Tcl is not 8.6) | From `20260113` on, the Mac (and Linux) 3.11 builds carry Tcl/Tk 9 (`20261110`: 3.11.18 with 9.0.4); the Windows 3.11.18 of `20261124` still carries 8.6.15 (its build log, 28 Nov). Tcl 9 removed `trace variable`, so every GUI that calls `.trace("w", ...)` crashed at open (54 in the first candidate). 3.11.14 lacks four CPython patch releases | §3.3: ported on `chore/tcl9-trace-add`, the bump on `chore/1.6.49-python-3.11.18` (1.6.49) |
 | `pandas>=2.2,<3` | `requirements.txt` | Python 3.10 held it at 2.x; on 3.11 it resolves to 3.1 (default string dtype, copy-on-write). Two tests failed on it (`test_conll_sentence_table`, `test_shape_of_stories_clustering`) | A migration of its own: the pandas 3 deprecation warnings on 2.3 first, then the sweep |
 | `folium<1`, `ipython<9` | `requirements.txt` | 3.11 lifts them to 1.0 and 9; held so GIS maps and pyLDAvis change only when tested for it | Lift one at a time; the GIS and topic-modeling recipes |
 | fastcoref 2.1.6 patched at load | `coreference_neural_util.patch_fastcoref_post_init` | Unmaintained since 2023; on transformers 5 `FCorefModel` misses `post_init()` ("no attribute 'all_tied_weights_keys'"). The patch calls it; weights and clusters match 4.51.3 | Drop the patch if fastcoref gets a release, or replace fastcoref |
@@ -91,14 +92,30 @@ Each of these was found while testing 1.6.47 and is pinned or patched so that re
 
 The local dev env for 3.11 is `NLP311` (conda, Python 3.11.18, Tcl 8.6.15). It did not catch the Tcl 9 crash, because conda's Python has Tcl 8.6: only a sweep or `bundle_gate.py` on the built zip did.
 
-### 3.3 Tcl/Tk 9 (proposed 1.6.49)
+### 3.3 Tcl/Tk 9 (1.6.49)
 
-Goal: bundle the newest CPython 3.11 from python-build-standalone, which now comes only with Tcl/Tk 9.
+Goal: bundle the newest CPython 3.11 from python-build-standalone, which on the Mac now comes only with Tcl/Tk 9; the Windows build of the same release (`20261124`, 3.11.18) still has Tcl/Tk 8.6.15. Where each step stands (27 Nov; Windows 28 Nov):
 
-1. **A Tcl 9 dev env.** Unpack `cpython-3.11.18+20261110` (or newer) for the Mac, install `requirements.txt` + `requirements-mac.txt` into it, and run `tests/gui_smoke.py` and `tests/gui_layout_gate.py` on it. That reproduces the crash without a CI build.
-2. **Port the traces.** `src/` has 267 `.trace("w", ...)` calls in 52 files (the old `trace_variable` form, removed in Tcl 9). Change each to `.trace_add("write", callback)`, which exists on Tcl 8.6 too, so the port can merge before the Python moves. The callback's third argument becomes `"write"` instead of `"w"`: grep for callbacks that read it (most are `lambda x, y, z:` and ignore it). A test can fail on any `.trace("` left in `src/`.
-3. **Then the rest of Tk 9**, found by the smoke and layout gates on the Tcl 9 env: CustomTkinter 6.0.0 and `tkcolorpicker` on Tk 9, fonts and scaling (Tk 9 changes the default scaling on Mac and Windows), `PhotoImage` formats, and anything `bundle_gate.py` lists.
-4. **Then the bump:** `PBS_TAG`, the URLs, the two SHA256 lines, and the Tcl check flipped to 9. Full tool sweep against the previous release, bundle gate, and the self-updater (a second python-env swap).
+1. **A Tcl 9 dev env: done.** `~/Documents/NLP_output/candidates/tcl9-env/python` is `cpython-3.11.18+20261124` for the Mac (Tcl/Tk 9.0.4, SHA256 checked), with `requirements.txt`, `requirements-mac.txt` and `en_core_web_sm` installed. Every `*_main.py` built on it with `bundle_gate.py`'s harness (real Tk, windows hidden): with `roberto`'s `src/`, 54 crash at open (`bad option "variable": must be add, info, or remove`), as in the first 1.6.47 candidate, so the env reproduces the problem.
+2. **Port the traces: done, `chore/tcl9-trace-add`.** 286 `.trace("w", cb)` calls in 51 files (commented-out ones included) became `.trace_add("write", cb)`, which Tcl 8.6 has too, so it can merge before the Python moves. No callback reads the mode argument (an AST scan of every callback). `tests/test_tk9_compat.py` fails on any old-style trace left in `src/`. With the port, 54 GUIs build on Tcl 9 and `NLP_setup_IO_main` exits while opening, as it does on 8.6 (1.6.47's bundle gate).
+3. **The rest of Tk 9: done on the Mac, `chore/tcl9-trace-add`.** Two bundles that differ only in their Python (3.11.14/Tk 8.6 and 3.11.18/Tk 9), same `src/`, `config/`, `TIPS/` and `jre/`, in `~/Documents/NLP_output/candidates/tcl9-env/pair-*`:
+   - **At open, the same on both:** every GUI's status, and the popups and launches it records, match for all 55 (`pair-tk86.json`, `pair-tk9.json`).
+   - **Layout: Tk 9 drew fonts a third larger.** Tk 8.6 on the Mac drew N points as N pixels; Tk 9 draws 4/3 N and ignores `tk scaling` for fonts (Courier 12 measured 260 px at every scaling from 0.5 to 2). `gui_layout_gate.py` (windows made transparent with `-alpha 0`, so nothing showed on screen): Tk 8.6 49 pass, 1 fail (wordclouds, 71 px, already there); Tk 9 11 pass, 39 fail (overflow up to 452 px). `src/tk9_fonts_util.py`, applied by `GUI_util` and `GUI_IO_util` before the first window, turns point size N into pixel size -N in widget options, ttk styles and `tkinter.font.Font`, on macOS with Tk 9 only. With it Tk 9 matches 8.6 exactly: 49 pass, the same wordclouds overflow.
+   - **Still to look at:** Windows Tk 9 does not arise in 1.6.49 (below); the shim does nothing on Windows. Left: `tkcolorpicker`'s dialog, `PhotoImage` formats, and a look at a few GUIs by a person (the gate measures geometry, not looks). The frozen menu (`_internal`) runs on the build runner's own Python, which keeps Tcl 8.6, so the Windows Tcl DLL list in `build-installers.yml` does not change; the self-updater's window and the Network Graph app use `pack`, which grows to fit.
+4. **The bump: on `chore/1.6.49-python-3.11.18`, not built.** `PBS_TAG` `20261124`, `PY_VER` `3.11.18`, both SHA256 lines from that release's `SHA256SUMS`, and the Tcl check (9 on the Mac, 8.6 on Windows: item 5). Still to do once a candidate is built: the full tool sweep against 1.6.48, the bundle gate, the self-updater (a second python-env swap), and a Windows check (everything above ran on a Mac).
+5. **Windows stays on Tk 8.6.** The first Windows build with this branch's `build-installers.yml` (run 46118332937 on `claude/tcl9-gui-upgrades-0fr6u2`) stopped at the build's Tcl check: `python-env has Tcl/Tk 8.6.15` (python-build-standalone `20261124`, `x86_64-pc-windows-msvc`). The check now expects 9 on the Mac and 8.6 on Windows. So on Windows 1.6.49 changes the Python, not the toolkit: the DPI question (whether Tk 9 declares the process DPI-aware, and what 150 % scaling then does to the placed layout) waits until a Windows build moves to Tk 9, and any Tk 9 feature (SVG images, `tk sysnotify`, `tk print`) needs a fallback on Windows.
+
+### 3.4 Tcl/Tk 9 on Windows means Python 3.14 (resolution check, 28 Nov 2026)
+
+Which python-build-standalone `20261124` Windows builds (`x86_64-pc-windows-msvc`) carry which Tcl/Tk, from the DLLs in each archive: 3.11.18, 3.12.16 and 3.13.18 have `tcl86t.dll`/`tk86t.dll` (8.6); 3.14.10 and 3.15.2 have `tcl90.dll`/`tcl9tk90.dll` (9.0). So Windows gets Tk 9 only with Python 3.14. Nothing needs it now (1.6.49 gets the CPython patches on 8.6); it matters for a Tk 9 feature on Windows, and for Python 3.11's end of life (October 2027).
+
+`uv pip compile requirements.txt requirements-<os>.txt` (uv 0.11.32, PyPI on 28 Nov), Windows x64 and macOS arm64, Python 3.11 and 3.14:
+- **Both resolve, to the same 174 (Windows) / 175 (Mac) packages.** Only five versions move on 3.14: numpy 2.4.6 → 2.5.5, scipy 1.17.1 → 1.18.1, contourpy 1.3.3 → 1.4.0, networkx 3.6.1 → 3.7, soupsieve 2.10 → 4.1.3. The heavy ones are unchanged and have cp314 wheels for both platforms: torch 2.15.0, transformers 5.24.1, spaCy 3.8.18 (thinc 8.3.14, blis 1.3.4), stanza 1.15.1, sentence-transformers 6.3.0, bertopic 0.17.4 (hdbscan 0.8.44, umap-learn 0.6.0, numba 0.68.1), scikit-learn 1.9.1, pandas 2.3.3, Pillow 13.0.0.
+- **gensim is the blocker.** Its latest release, 4.4.0 (Oct 2025), has wheels for cp39–cp313 only, so on 3.14 pip builds it from source (C/Cython, against numpy 2.5 and scipy 1.18) on the build runner. Not tried. It is used by Word2Vec (`word2vec_Gensim_util`, the "Word2Vec (via Gensim)" option) and Gensim LDA topic modeling (`topic_modeling_gensim_util`, also the corpus profiler's topics step); `statistics_txt_util` only has a commented-out import. Its release pace is the cause: cp312 wheels came with 4.3.3 (Jul 2024), cp313 with 4.4.0 (Oct 2025), and nothing since (PyPI, 28 Nov 2026).
+- **Source-only on 3.11 too** (pure Python, install today): autocorrect, fastcoref, langdetect, langid, pycorenlp, simplekml.
+- **Not checked:** whether anything runs on 3.14 (fastcoref, unmaintained since 2023, subclasses transformers internals; pyLDAvis; tkcolorpicker), the frozen menu's PyInstaller build on 3.14, or SRL (its own 3.8 env, unaffected).
+
+Before a 3.14 release: build gensim from source on both runners (or drop or replace it), then a full candidate with the sweep and the bundle gate, as for 1.6.47.
 
 ## 5. Outdated copy and flows (scan of 9 Nov 2026)
 
@@ -309,7 +326,7 @@ Most of these are about content and chrome, not the widget toolkit; CTk alone fi
 4. **Per-GUI conversion in tranches**, re-running the branch's mechanical recipe on today's files instead of rebasing its 49 commits; use the branch commits as the reference for each GUI's quirks.
 5. **Fold the hubs into the menu** (11.2 #11) and hide what the zip cannot run (§5.1).
 
-Each PR carries before/after screenshots from a gallery script. Add one to `tests/` that runs on a Mac too (the branch's `gui_gallery.py` reads Windows screen scaling; on a Mac `screencapture -R` works, and the GUIs that build only under `__main__` need `runpy`).
+Each PR carries before/after screenshots from `tests/gui_gallery.py` (in `roberto` since 1.6.43; unattended since 1.6.49, and run by the release-check workflow on Windows; the Mac runner cannot take screenshots, so on a Mac run it by hand).
 
 ## 9. Open pull requests
 
@@ -444,7 +461,7 @@ Deleting someone else's remote branch is Roberto's call.
 - **A release may delete files.** The self-updater installs the new release as a whole folder and carries over only `config/`, `reminders/` and files the user added (not in the old manifest); a release file the new release drops is left in `<folder>_previous` and goes with it. A dropped file the user had edited stays in that backup, which is then kept (`user_files` in `NLP_setup_self_update_util.py`).
 - **Pillow** is pinned to 13.0.0 (1.6.47). The old 10.4.0 pin was for a Tcl/Tk crash in `PIL.ImageTk`, which only the Google Earth icon preview still uses, inside a try/except. Don't add new `ImageTk` callers: use `GUI_util.tk_image_from_pil`.
 - **transformers** is `>=5.10` (1.6.47). Don't add a package that holds it below 5; `bert-extractive-summarizer` did, and was removed for it.
-- **CI Python:** 3.11 for tests and installers, and the bundled `python-env` is CPython 3.11.14 from python-build-standalone `20251217` (1.6.47), the last with Tcl/Tk 8.6. Don't move PBS_TAG past it until `src/` is ported to Tcl 9 (`.trace("w", ...)` → `trace_add("write", ...)`, 276 calls, then a full GUI pass); the build now fails if python-env's Tcl is not 8.6. SRL stays on its own 3.8 env.
+- **CI Python:** 3.11 for tests and installers, and the bundled `python-env` is CPython 3.11.14 from python-build-standalone `20251217` (1.6.47), the last with Tcl/Tk 8.6. 1.6.49 moves it to `20261124` (3.11.18, Tcl/Tk 9.0.4) after the `trace_add` port, on the Mac (Windows: 3.11.18 with Tcl/Tk 8.6.15), and the build then fails if python-env's Tcl is not 9 on the Mac or not 8.6 on Windows. SRL stays on its own 3.8 env.
 - **Mac runners:** `macos-15` since 2 Nov 2026 (`macos-14` retired). No Intel Mac build.
 - **`src/` is Ruff-formatted** (v1.6.40). PRs opened before that need a rebase, not a hand merge.
 - **Update order matters.** The in-app check reads `current-stable`'s `lib/release_version.txt`, which changes before the tag's zips finish building. The self-updater and the launch popup both wait until that version's zip is on the release page.
@@ -463,3 +480,57 @@ Deleting someone else's remote branch is Roberto's call.
 - GitHub allows 60 unauthenticated API calls an hour per IP; on a shared campus network the exit-time release lookup can get 403. The fallback is the download page with the reason.
 - The Git update on `current-stable` still runs `git add -A` + `git stash`, so local edits go into a stash silently.
 - A release file the NLP Suite itself rewrites at run time would keep the backup every time; none is known.
+
+## 16. Outdated NLP tools and models (scan of 28 Nov 2026)
+
+What each tool uses, whether it is still current, and what would replace it. Inventory from `requirements.txt`, model IDs hard-coded in `src/`, and the GUI menus. Replacements were checked with web searches on 28 Nov 2026 (search results only; the pages were not read in full); entries marked *judgment* were not checked. Lexicon and corpus-trained methods (VADER, NRC, hedonometer, MALLET, Word2Vec) are not state of the art on benchmarks but remain defensible in social-science work because they are interpretable: keep them. Every swap changes outputs, so add new options beside the old ones rather than replacing them, record the model ID in the output, and run `tests/tool_sweep.py` (§14).
+
+### 16.1 Proposed order
+
+| # | Change | Where | Risk |
+|---|---|---|---|
+| 1 | Retire the `transformer-srl` / AllenNLP 3.8 env | `SRL_util.py`, `SRL_worker.py`, `setup_SRL.py`, `lib/SRL/` | High: no maintained drop-in (16.5) |
+| 2 | One configurable embedding model instead of three hard-coded 2018–2021 ones | `semantic_similarity_util.py:56`, `topic_modeling_bert_util.py:82`, `BERT_util.py:227`; `bert-base-uncased` in `WSI_util.py:219`, `:244` | Medium: outputs change, download grows |
+| 3 | GlotLID for language detection | `file_spell_checker_util.py`, `corpus_profiler_util.py:256`, style analysis | Low; adds `fasttext` |
+| 4 | Maverick as a coreference option; fastcoref as default (ties to §5.1) | `coreference_neural_util.py`, `coreference_main.py:348` | Medium: licence |
+| 5 | GLiNER in place of the unimplemented IBM zshot NER option | `BERT_util.NER_tags_BERT()` sibling, `NER_main.py:489` | Low; check its transformers pin against `>=5.10` |
+| 6 | "Legacy" group in the sentiment menu (CoreNLP, Stanza, SentiWordNet, TextBlob) | `SA_algorithms` in `sentiment_analysis_main.py`, `sentiment_analysis_util.selected_algorithms()`, the group-name test at `sentiment_analysis_main.py:792` | Low |
+| 7 | A sentiment model not trained on tweets | `BERT_util.sentiment_analysis_BERT(model_path=...)` | Medium |
+| 8 | Open English WordNet via `wn` (already a requirement) | 7 files import `nltk.corpus.wordnet`; SentiWordNet must stay on WordNet 3.0 | Low |
+| 9 | CoreNLP no longer the default parser | `NLP_setup_package_language_main.py`; first give OpenIE, enhanced dependencies and clauses a non-CoreNLP path | High |
+
+### 16.2 Parsers
+
+- **Stanford CoreNLP** (repo mentions 4.2.0 and 4.6.0): pre-transformer models; still released (4.5.9 / 4.5.10 in 2025), mostly maintenance ([releases](https://github.com/stanfordnlp/CoreNLP/releases)). Keep as an option.
+- **Stanza** (`>=1.12.2`): current and maintained ([release history](https://stanfordnlp.github.io/stanza/release_history.html)). Keep as default.
+- **spaCy `en_core_web_sm`** (18 call sites): lowest-accuracy English model. Route all loads through one `spaCy_util` loader with a sm/trf choice in setup; `en_core_web_trf` is already used in 2 places.
+
+### 16.3 NER and coreference
+
+- **NER, `djagatiya/ner-roberta-base-ontonotesv5-englishv4`:** adequate RoBERTa-base fine-tune (*judgment*). Add [GLiNER](https://github.com/urchade/GLiNER) for user-named entity types; a fork, [neuml/gliner](https://github.com/neuml/gliner), exists to relax its transformers pin.
+- **Coreference:** CoreNLP (about 2016, pronouns only) and Stanza are the menu's first options; fastcoref ("BERT") also clusters nominal mentions. [Maverick](https://aclanthology.org/2024.acl-long.722) (ACL 2024, `pip install maverick-coref`) reports state of the art on CoNLL-2012 at much lower memory and time; a mirror lists its licence as CC BY-NC 4.0 ([libraries.io](https://libraries.io/pypi/maverick-coref)): confirm on the official repo before shipping. It fits as a second backend in `coreference_neural_util.py` under the same `(corefed_files, errorFound)` contract.
+
+### 16.4 Sentiment and emotion
+
+- **Cardiff RoBERTa / XLM-R** (`cardiffnlp/twitter-*`): trained on tweets, a poor fit for narrative text. The multilingual one is the hard-coded default in `BERT_util.sentiment_main()`.
+- **Obsolete for accuracy:** CoreNLP sentiment (RNTN, 2013), Stanza sentiment, SentiWordNet 3.0, TextBlob/Pattern. Move to "Legacy".
+- **ANEW** (`lib/sentimentLib/EnglishANEW.csv`, 1999, about 1,000 words): Warriner et al. 2013 (about 14k words) or NRC VAD have the same valence/arousal/dominance columns (*judgment*).
+- **Keep:** VADER, hedonometer (also feeds Shape of Stories), NRC EmoLex.
+
+### 16.5 SRL, SVO, OpenIE
+
+- **SRL:** [transformer-srl](https://github.com/riccorl/transformer-srl) (BERT-base, Shi & Lin 2019) on AllenNLP 1.2 / torch 1.7 / Python 3.8; AllenNLP was archived in 2022. The search found no maintained, pip-installable English PropBank SRL with pretrained models; research continues ([2025 survey](https://arxiv.org/html/2502.08660)). Options: keep it frozen and isolated; re-host the checkpoint on current torch/transformers without AllenNLP (*judgment*, unverified); or LLM extraction (open question: acceptable for an offline, reproducible research tool?). Any replacement must write the CSV columns `SRL_util` already produces, so `SRL_main`, `SVO_main`, `semantic_analysis_main` and `corpus_profiler_util` keep working.
+- **OpenIE via CoreNLP** (2015, `SVO_main.py:441`): outdated; neural OpenIE or LLM triples (*judgment*).
+- **SVO by dependency rules:** sound; improves with the parser.
+
+### 16.6 Embeddings and topics
+
+- `all-MiniLM-L6-v2`, `all-distilroberta-v1` (2021), `bert-base-uncased` (2018) are dated. 2026 blog rankings name Qwen3-Embedding-0.6B and EmbeddingGemma-300m as strong small models and bge-small-en-v1.5 as the smallest ([supermemory](https://supermemory.ai/blog/best-open-source-embedding-models-benchmarked-and-ranked/), [app-lab](https://app-lab.ai/blog/choose-embedding-model-2026/)); confirm on the MTEB leaderboard and check licences (EmbeddingGemma uses Gemma terms, *judgment*).
+- **Keep:** Gensim Word2Vec, BERTopic (swap its embedder), MALLET; Gensim LDA as the no-Java fallback.
+
+### 16.7 Knowledge graphs, lexicons, utilities
+
+- **DBpedia Spotlight** (`knowledge_graphs_DBpedia_util.py:34`, a public http endpoint) and **YAGO**: aging; Wikidata is the natural fourth target (*judgment*).
+- **WordNet** through NLTK is Princeton 3.0; Open English WordNet through `wn`. Wrap access in one helper first: the APIs differ.
+- **Language detection:** `langdetect`, `langid`, `spacy-langdetect` → [GlotLID](https://huggingface.co/cis-lmu/glotlid) v3 (fastText, about 2,000 labels, Apache 2.0; [GitHub](https://github.com/AI-Natural-Language-Processing-Lab/GlotLID-language-identification-model)). Map its ISO 639-3 codes to the 2-letter codes the language config uses.
+- **Fine as they are:** textstat formulas, geopy/Nominatim, Gephi, word clouds. Spell checkers are basic (SymSpell or LanguageTool would be upgrades, *judgment*). The name-based gender annotator is a contested method, not an outdated model: a caveat in its TIPS file is enough.

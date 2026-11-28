@@ -1,0 +1,19 @@
+name: Test branch - release checks of release/v1.6.49
+
+# Test branch only, not for merging: runs the real release-checks.yml (as on release/v1.6.49) against 1.6.47.
+on:
+  push:
+    branches:
+      - claude/tcl9-gui-upgrades-0fr6u2
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    uses: ./.github/workflows/release-checks.yml
+    with:
+      baseline: '1.6.47'
+    permissions:
+      contents: write
+      actions: read

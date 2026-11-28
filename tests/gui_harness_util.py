@@ -1,14 +1,18 @@
-"""Code put in front of the layout gate's and the gallery's per-GUI worker: answers every dialog at once.
+"""Shared by gui_layout_gate.py and gui_gallery.py, which build each GUI in its own process under real Tk.
 
-On a runner nobody clicks, so a GUI that shows a popup while it opens (14 do: "requires a csv FILE in INPUT;
-RUN is disabled" and the like) waited for the worker's 300 s timeout, twice per GUI (Tk 8.6 and Tk 9), and
-the layout gate ran over two hours in run 46120257866. The answers are bundle_gate.py's: OK, No, Cancel.
-Windows are NOT hidden here (the gallery screenshots them).
+UNATTENDED is code put in front of that per-GUI worker so it can run where nobody clicks (a CI runner, or
+a machine left alone): every dialog is answered at once, as bundle_gate.py answers them (OK, No, Cancel),
+and nothing the GUI starts while it opens (another GUI through run_script, a program, a shell command) runs;
+each is printed to stderr instead. Windows are NOT hidden (the gallery screenshots them).
+
+run_bounded runs that worker with a timeout that holds. subprocess.run(..., timeout=) kills only the child
+and then waits for its pipes, which a program the GUI launched keeps open: on GitHub's runners the layout
+gate never finished (no output for 3 h 50, 48 leftover python processes; 28 Nov 2026).
 """
 
 import os
 
-PRELUDE = r"""
+UNATTENDED = r"""
 import tkinter.messagebox as _mb, tkinter.filedialog as _fd, webbrowser as _wb, sys as _sys
 def _answer(kind, value):
     def f(*a, **k):
@@ -56,7 +60,9 @@ def run_bounded(cmd, timeout, cwd=None):
     import subprocess
 
     kw = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
-    p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace", **kw)
+    p = subprocess.Popen(
+        cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace", **kw
+    )
     try:
         out, err = p.communicate(timeout=timeout)
         return subprocess.CompletedProcess(cmd, p.returncode, out, err)
