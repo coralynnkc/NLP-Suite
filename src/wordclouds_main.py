@@ -367,7 +367,7 @@ def open_GUI(*args):
             run_script_util.run_script("parsers_annotators_main.py")
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 
 def activate_GUI_options():
@@ -446,7 +446,7 @@ def warnUser(*args):
         )
 
 
-prefer_horizontal_var.trace("w", warnUser)
+prefer_horizontal_var.trace_add("write", warnUser)
 
 ## import wordclouds_util
 # font_list = wordclouds_util.get_font_list()
@@ -739,8 +739,8 @@ def displayWarning(*args):
         )
 
 
-collocation_var.trace("w", displayWarning)
-differentPOS_differentColor_var.trace("w", displayWarning)
+collocation_var.trace_add("write", displayWarning)
+differentPOS_differentColor_var.trace_add("write", displayWarning)
 
 menu_values = ""
 
@@ -788,7 +788,7 @@ y_multiplier_integer = GUI_IO_util.placeWidget(
 #     else:
 #         differentColumns_differentColor_checkbox.config(state='disabled')
 #         csv_field_menu.configure(state='disabled')
-# differentColumns_differentColor_var.trace('w',activateCsvOptions)
+# differentColumns_differentColor_var.trace_add('write',activateCsvOptions)
 #
 # activateCsvOptions()
 
@@ -837,7 +837,7 @@ def activate_color_palette(*args):
         csvField_color_list.append("|")
 
 
-color_var.trace("w", activate_color_palette)
+color_var.trace_add("write", activate_color_palette)
 
 
 def update_csvFields():
@@ -917,7 +917,7 @@ def activateCsvField(*args):
         color_checkbox.configure(state="disabled")
 
 
-csv_field_var.trace("w", activateCsvField)
+csv_field_var.trace_add("write", activateCsvField)
 
 
 def activate_Python_options(*args):
@@ -961,7 +961,7 @@ def activate_Python_options(*args):
         use_contour_only_checkbox.config(state="normal")
 
 
-wordclouds_var.trace("w", activate_Python_options)
+wordclouds_var.trace_add("write", activate_Python_options)
 activate_Python_options()
 
 
@@ -991,8 +991,8 @@ def changed_filename(*args):
         return
 
 
-inputFilename.trace("w", changed_filename)
-input_main_dir_path.trace("w", changed_filename)
+inputFilename.trace_add("write", changed_filename)
+input_main_dir_path.trace_add("write", changed_filename)
 
 changed_filename()
 
@@ -1019,7 +1019,7 @@ def changeLabel_nomin(*args):
         )
 
 
-doNotCreateIntermediateFiles_var.trace("w", changeLabel_nomin)
+doNotCreateIntermediateFiles_var.trace_add("write", changeLabel_nomin)
 
 
 def turnOff_doNotCreateIntermediateFiles_checkbox(*args):
@@ -1029,7 +1029,7 @@ def turnOff_doNotCreateIntermediateFiles_checkbox(*args):
         doNotCreateIntermediateFiles_checkbox.config(state="disabled")
 
 
-input_main_dir_path.trace("w", turnOff_doNotCreateIntermediateFiles_checkbox)
+input_main_dir_path.trace_add("write", turnOff_doNotCreateIntermediateFiles_checkbox)
 
 videos_lookup = {"Wordcloud 1": "https://youtu.be/CfRV9V7-OCM", "Wordcloud 2": "https://youtu.be/5Q-AvG45rHY"}
 videos_options = "Wordcloud 1", "Wordcloud 2"
@@ -1182,7 +1182,7 @@ def activate_NLP_options(*args):
     language_list = [language]
 
 
-GUI_util.setup_menu.trace("w", activate_NLP_options)
+GUI_util.setup_menu.trace_add("write", activate_NLP_options)
 activate_NLP_options()
 
 if error:

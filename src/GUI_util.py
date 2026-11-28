@@ -178,7 +178,7 @@ def set_window(size, label, config, config_option):
         else:
             window.title(GUI_label)
 
-    input_main_dir_path.trace("w", _update_title_on_input_change)
+    input_main_dir_path.trace_add("write", _update_title_on_input_change)
 
 
 # insert side bar
@@ -1968,8 +1968,8 @@ def GUI_top(config_input_output_numeric_options, config_filename, IO_setup_displ
         global noLicenceError
         noLicenceError = True
 
-    setup_IO_menu_var.trace(
-        "w", lambda x, y, z: changed_setup_IO_config(scriptName, IO_setup_display_brief, open_setup_IO_GUI=True)
+    setup_IO_menu_var.trace_add(
+        "write", lambda x, y, z: changed_setup_IO_config(scriptName, IO_setup_display_brief, open_setup_IO_GUI=True)
     )
 
 
@@ -2399,7 +2399,7 @@ def GUI_bottom(
                     message="All charts involving multiple documents are automatically normalized by document size",
                 )
 
-        data_transformation_options_widget.trace("w", run_data_transformation)
+        data_transformation_options_widget.trace_add("write", run_data_transformation)
 
         def open_GUI(*args):
             if "Geographic" in charts_type_options_widget.get():
@@ -2409,7 +2409,7 @@ def GUI_bottom(
             if "_____________" in charts_type_options_widget.get():
                 charts_type_options_widget.set("Bar chart")
 
-        charts_type_options_widget.trace("w", open_GUI)
+        charts_type_options_widget.trace_add("write", open_GUI)
 
         # if not 'data_manipulation_main.py' in scriptName and not 'data_visualization_1_main.py' in scriptName :
         data_tools_options = ["Data/corpus sampling", "Data manipulation", "Data statistics", "Data visualization"]
@@ -2440,7 +2440,7 @@ def GUI_bottom(
             if "sample_corpus_main.py" not in scriptName and "sampling" in data_tools_options_widget.get():
                 run_script_util.run_script("sample_corpus_main.py")
 
-        data_tools_options_widget.trace("w", run_data_tool)
+        data_tools_options_widget.trace_add("write", run_data_tool)
     # else:
     #     y_multiplier_integer += 1
 
@@ -2449,7 +2449,7 @@ def GUI_bottom(
     #         mb.showwarning(title='Warning',
     #                        message="The 'Python Plotly' option to draw charts is still under development. By and large working well, but... little improvements are under way.")
     #         charts_package_options_widget.set('Plotly')
-    # charts_package_options_widget.trace('w',warning_message)
+    # charts_package_options_widget.trace_add('write',warning_message)
 
     readme_button = tk.Button(window, text="Read Me", command=readMe_command, width=10, height=2)
     # In NLP_setup_IO_main and NLP_setup_package_language_main an extra line of widgets is added to the GUI
@@ -2504,7 +2504,7 @@ def GUI_bottom(
     #   videos_lookup = {'No videos available': ''}
     #   videos_options = 'No videos available'
 
-    videos_dropdown_field.trace("w", lambda x, y, z: watch_video(videos_lookup, scriptName))
+    videos_dropdown_field.trace_add("write", lambda x, y, z: watch_video(videos_lookup, scriptName))
 
     tips_dropdown_field.set("Open TIPS files")
     if len(TIPS_lookup) == 1:
@@ -2585,7 +2585,7 @@ def GUI_bottom(
         if len(reminder_options) > 0:
             reminders_util.resetReminder(scriptName, reminders_dropdown_field.get())
 
-    reminders_dropdown_field.trace("w", trace_reminders_dropdown)
+    reminders_dropdown_field.trace_add("write", trace_reminders_dropdown)
 
     trace_reminders_dropdown()
 
@@ -2722,7 +2722,7 @@ def GUI_bottom(
 
     # avoid tracing again since tracing is already done at the bottom of those scripts
     if scriptName != "SVO_main.py" and scriptName != "parsers_annotators_main.py":
-        setup_menu.trace("w", lambda x, y, z: setup_parsers_annotators(y_multiplier_integer, scriptName))
+        setup_menu.trace_add("write", lambda x, y, z: setup_parsers_annotators(y_multiplier_integer, scriptName))
 
     # 8/27
     missing_IO = ""

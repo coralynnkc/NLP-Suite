@@ -775,7 +775,7 @@ def open_GUI(*args):
             run_script_util.run_script("file_checker_pre_processing_pipeline_main.py")
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 mean_checkbox = tk.Checkbutton(window, text="Calculate sentence mean", variable=mean_var, onvalue=1, offvalue=0)
 y_multiplier_integer = GUI_IO_util.placeWidget(
@@ -834,7 +834,7 @@ def display_reminder(*args):
         return
 
 
-SA_algorithm_var.trace("w", display_reminder)
+SA_algorithm_var.trace_add("write", display_reminder)
 
 SA_algorithms = [
     "*",
@@ -938,10 +938,10 @@ def activate_SOS(*args):
         shape_of_stories_checkbox.config(state="normal")
 
 
-shape_of_stories_var.trace("w", activate_SOS)
-inputFilename.trace("w", activate_SOS)
-input_main_dir_path.trace("w", activate_SOS)
-SA_algorithm_var.trace("w", activate_SOS)
+shape_of_stories_var.trace_add("write", activate_SOS)
+inputFilename.trace_add("write", activate_SOS)
+input_main_dir_path.trace_add("write", activate_SOS)
+SA_algorithm_var.trace_add("write", activate_SOS)
 
 activate_SOS()
 
@@ -955,14 +955,14 @@ activate_SOS()
 # 		doNotCreateIntermediateFiles_checkbox.config(text="Do NOT produce intermediate csv files when processing all txt files in a directory")
 # 	else:
 # 		doNotCreateIntermediateFiles_checkbox.config(text="Produce intermediate csv files when processing all txt files in a directory")
-# doNotCreateIntermediateFiles_var.trace('w',changeLabel)
+# doNotCreateIntermediateFiles_var.trace_add('write',changeLabel)
 #
 # def turnOff_doNotCreateIntermediateFiles_checkbox(*args):
 # 	if len(input_main_dir_path.get())>0:
 # 		doNotCreateIntermediateFiles_checkbox.config(state='normal')
 # 	else:
 # 		doNotCreateIntermediateFiles_checkbox.config(state='disabled')
-# input_main_dir_path.trace('w',turnOff_doNotCreateIntermediateFiles_checkbox)
+# input_main_dir_path.trace_add('write',turnOff_doNotCreateIntermediateFiles_checkbox)
 
 videos_lookup = {"No videos available": ""}
 videos_options = "No videos available"
@@ -1116,7 +1116,7 @@ def activate_NLP_options(*args):
     language_list = [language]
 
 
-GUI_util.setup_menu.trace("w", activate_NLP_options)
+GUI_util.setup_menu.trace_add("write", activate_NLP_options)
 activate_NLP_options()
 
 if error:

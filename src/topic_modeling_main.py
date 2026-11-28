@@ -367,7 +367,7 @@ if current_process().name == "MainProcess":
             )
             routine_options = reminders_util.getReminders_list(scriptName)
 
-    Gensim_MALLET_var.trace("w", Mallet_reminder)
+    Gensim_MALLET_var.trace_add("write", Mallet_reminder)
 
     def activate_options():
         if BERT_var.get():

@@ -794,7 +794,7 @@ def open_GUI(*args):
         run_script_util.run_script(script)
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 
 parsers_annotators_button = tk.Button(
@@ -1032,7 +1032,7 @@ def activate_NLP_options(*args):
     language_list = [language]
 
 
-GUI_util.setup_menu.trace("w", activate_NLP_options)
+GUI_util.setup_menu.trace_add("write", activate_NLP_options)
 activate_NLP_options()
 
 if error:

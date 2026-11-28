@@ -216,7 +216,7 @@ def open_GUI(*args):
             )
 
 
-extra_GUIs_menu_var.trace("w", open_GUI)
+extra_GUIs_menu_var.trace_add("write", open_GUI)
 
 check_nom_verb_ending_var.set(1)
 check_nom_verb_ending_checkbox = tk.Checkbutton(window, variable=check_nom_verb_ending_var, onvalue=1, offvalue=0)
