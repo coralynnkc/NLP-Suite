@@ -139,13 +139,27 @@ jobs:
           rm -rf zip
           "bundle/NLP_Suite/python-env/python.exe" -c "import sys, tkinter; print(sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
           mkdir -p ext
-          curl -fSL -o corenlp.zip https://nlp.stanford.edu/software/stanford-corenlp-latest.zip
-          7z x -y -oext corenlp.zip > /dev/null && rm corenlp.zip
-          curl -fSL -o mallet.tgz https://github.com/mimno/Mallet/releases/download/v202108/Mallet-202108-bin.tar.gz
-          tar -xzf mallet.tgz -C ext && rm mallet.tgz
-          CORENLP=$(cygpath -m "$(ls -d "$PWD"/ext/stanford-corenlp-* | head -1)")
-          MALLET=$(cygpath -m "$(ls -d "$PWD"/ext/Mallet-* | head -1)")
-          printf '%s\n' "Software,Installation_path,Download_link" "Stanford CoreNLP,$CORENLP," "MALLET,$MALLET," > external_config.csv
+          echo "Software,Installation_path,Download_link" > external_config.csv
+          # nlp.stanford.edu refused the runner (28 Nov); Stanza's own installer downloads from Hugging Face.
+          # If neither works, the CoreNLP recipes are SKIPPED rather than the whole sweep stopping.
+          for url in https://huggingface.co/stanfordnlp/CoreNLP/resolve/main/stanford-corenlp-latest.zip \
+                     https://nlp.stanford.edu/software/stanford-corenlp-latest.zip; do
+            if curl -fSL --connect-timeout 30 --retry 2 -o corenlp.zip "$url"; then
+              7z x -y -oext corenlp.zip > /dev/null && rm corenlp.zip && echo "CoreNLP from $url" && break
+            fi
+            echo "::warning::CoreNLP download failed: $url"
+          done
+          if ls -d ext/stanford-corenlp-* > /dev/null 2>&1; then
+            echo "Stanford CoreNLP,$(cygpath -m "$(ls -d "$PWD"/ext/stanford-corenlp-* | head -1)")," >> external_config.csv
+          else
+            echo "::warning::No CoreNLP: its recipes will be SKIPPED"
+          fi
+          if curl -fSL --connect-timeout 30 --retry 2 -o mallet.tgz https://github.com/mimno/Mallet/releases/download/v202108/Mallet-202108-bin.tar.gz \
+             && tar -xzf mallet.tgz -C ext && rm mallet.tgz; then
+            echo "MALLET,$(cygpath -m "$(ls -d "$PWD"/ext/Mallet-* | head -1)")," >> external_config.csv
+          else
+            echo "::warning::No MALLET: its recipes will be SKIPPED"
+          fi
           cat external_config.csv
 
       - uses: actions/setup-python@v7
@@ -188,6 +202,9 @@ jobs:
       - name: Compare
         run: |
           set -o pipefail
+          for d in sweep-base sweep-cand; do
+            [ -f "$d/report.jsonl" ] || { echo "::error::$d is missing: that sweep did not run"; exit 1; }
+          done
           python tests/tool_sweep.py compare sweep-base sweep-cand 2>&1 | tee sweep-compare.txt
       - name: Upload the comparison
         if: always()
@@ -195,4 +212,35 @@ jobs:
         with:
           name: sweep-compare
           path: sweep-compare.txt
+          retention-days: 30
+
+  # The self-updater (docs/future-work.md §14): the published 1.6.47's own updater installs the candidate.
+  self-update:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: NLP-Suite-windows-x64
+          path: cand_zip
+      - name: Get the published 1.6.47 Windows zip
+        run: curl -fSL -o NLP-Suite-1.6.47-windows-x64.zip https://github.com/NLP-Suite/NLP-Suite/releases/download/v1.6.47/NLP-Suite-windows-x64.zip
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Update 1.6.47 to the candidate with 1.6.47's own updater
+        run: |
+          set -o pipefail
+          python .github/tk9-check/self_update_check.py NLP-Suite-1.6.47-windows-x64.zip cand_zip/NLP-Suite-windows-x64.zip "$RUNNER_TEMP/selfupdate" 2>&1 | tee self-update.txt
+      - name: Upload the result
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: self-update
+          path: self-update.txt
           retention-days: 30
