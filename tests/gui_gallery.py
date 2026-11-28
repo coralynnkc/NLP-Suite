@@ -147,6 +147,14 @@ except Exception as e:
     print("SHOT_FAIL", str(e)[:120])
 """.replace("{src}", _SRC)
 
+# Answer every dialog and start nothing a GUI launches while it opens, so the run needs no one at the
+# keyboard (a CI runner, or a machine left alone); see gui_harness_util.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gui_harness_util  # noqa: E402
+
+_WORKER = gui_harness_util.UNATTENDED + _WORKER
+PER_GUI_TIMEOUT = int(os.environ.get("NLP_GUI_TIMEOUT", "120"))  # seconds per GUI; the whole tree is killed after it
+
 
 def thumb_data_uri(png_path, max_w=680):
     from PIL import Image
@@ -222,9 +230,7 @@ def main():
         print("[%d/%d] %s ..." % (i, total, f), flush=True)
         png = os.path.join(_SHOTS, f.replace(".py", ".png"))
         try:
-            p = subprocess.run(
-                [sys.executable, "-c", _WORKER, f, png], capture_output=True, text=True, timeout=300, cwd=_SRC
-            )
+            p = gui_harness_util.run_bounded([sys.executable, "-c", _WORKER, f, png], PER_GUI_TIMEOUT, cwd=_SRC)
         except subprocess.TimeoutExpired:
             p = None
         out = p.stdout if p else ""
@@ -435,6 +441,8 @@ def main():
         % (time.strftime("%H:%M:%S"), _elapsed_message(time.time() - start_time)),
         flush=True,
     )
+    if os.environ.get("NLP_GALLERY_NO_BROWSER"):  # CI: the page is uploaded, not opened
+        return 0
     try:
         webbrowser.open("file://" + os.path.abspath(out_path))
     except Exception:

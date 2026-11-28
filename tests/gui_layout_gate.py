@@ -111,6 +111,14 @@ print("VERDICT overflow=%d max_right=%d win=%d overlaps=%d opted=%d %s"
       % (overflow, max_right, win_w, overlaps, opted, ("| " + worst) if worst else ""))
 """.replace("{src}", _SRC)
 
+# Answer every dialog and start nothing a GUI launches while it opens, so the run needs no one at the
+# keyboard (a CI runner, or a machine left alone); see gui_harness_util.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gui_harness_util  # noqa: E402
+
+_WORKER = gui_harness_util.UNATTENDED + _WORKER
+PER_GUI_TIMEOUT = int(os.environ.get("NLP_GUI_TIMEOUT", "120"))  # seconds per GUI; the whole tree is killed after it
+
 
 def main():
     guis = sorted(
@@ -122,9 +130,7 @@ def main():
     fails, skipped, log = [], [], []
     for f in guis:
         try:
-            p = subprocess.run(
-                [sys.executable, "-c", _WORKER, f], capture_output=True, text=True, timeout=300, cwd=_SRC
-            )
+            p = gui_harness_util.run_bounded([sys.executable, "-c", _WORKER, f], PER_GUI_TIMEOUT, cwd=_SRC)
         except subprocess.TimeoutExpired:
             if f in _KNOWN_SKIP:
                 skipped.append(f)

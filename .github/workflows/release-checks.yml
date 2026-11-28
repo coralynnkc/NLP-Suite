@@ -1,0 +1,299 @@
+name: Release candidate checks (Windows, Mac)
+
+# Before a tag (CLAUDE.md "Testing", PLAN): builds the candidate zips with build-installers.yml and checks
+# each against the published release's zip on the same OS, both run on their own python-env:
+#   check        Tk/DPI probes, bundle_gate snapshot + compare, gui_layout_gate and the screenshot gallery
+#                (tests/, run on each zip's python-env with this checkout's src/), and a summary
+#   sweep        tests/tool_sweep.py on each zip (its own src/), then compare: fails on lost outputs
+#   self-update  the baseline's own updater installs the candidate (.github/release-checks/self_update_check.py)
+# Start it from the Actions tab (Run workflow) on the release branch, with the last published version.
+on:
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: Last published release to compare against (e.g. 1.6.48)
+        required: true
+  workflow_call:  # so another workflow can run these checks (the test branch did, 28 Nov)
+    inputs:
+      baseline:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  BASE: ${{ inputs.baseline }}
+  DO_NOT_TRACK: '1'
+  NLP_SILENT: '1'
+  PYTHONIOENCODING: utf-8
+  PYTHONUNBUFFERED: '1'
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-installers.yml
+    # its release job asks for contents: write; it only runs on a v* tag, never on this branch
+    permissions:
+      contents: write
+
+  check:
+    needs: build
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, artifact: NLP-Suite-windows-x64, py: python-env/python.exe }
+          - { os: macos-15, artifact: NLP-Suite-mac-arm64, py: python-env/bin/python3 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: ${{ matrix.artifact }}
+          path: cand_zip
+      - name: Get the published ${{ env.BASE }} zip
+        run: curl -fSL -o base.zip "https://github.com/NLP-Suite/NLP-Suite/releases/download/v$BASE/${{ matrix.artifact }}.zip"
+      - name: Unzip both
+        run: |
+          set -euo pipefail
+          bash .github/release-checks/unzip_bundle.sh "cand_zip/${{ matrix.artifact }}.zip" cand
+          bash .github/release-checks/unzip_bundle.sh base.zip base
+          for d in base cand; do
+            "$d/NLP_Suite/${{ matrix.py }}" -c "import sys, tkinter; print('$d', open('$d/NLP_Suite/lib/release_version.txt').read().strip(), 'Python', sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
+          done
+          mkdir -p results config
+          cp lib/config_defaults/*.csv config/
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: pip install pyinstaller
+
+      - name: A 1920x1080 screen on Windows (the runner's 1024x768 squeezes every 1350 px window)
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        shell: pwsh
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+
+      - name: Let the zips' Pythons take screenshots on the Mac (Screen Recording permission; may not be allowed)
+        if: runner.os == 'macOS'
+        continue-on-error: true
+        run: |
+          db="/Library/Application Support/com.apple.TCC/TCC.db"
+          for bin in "$(realpath base/NLP_Suite/python-env/bin/python3)" "$(realpath cand/NLP_Suite/python-env/bin/python3)" /usr/sbin/screencapture; do
+            sudo sqlite3 "$db" "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, flags) VALUES ('kTCCServiceScreenCapture', '$bin', 1, 2, 4, 1, 0);" && echo "granted: $bin"
+          done
+
+      - name: Tk probes (DPI on Windows only)
+        continue-on-error: true
+        run: |
+          for d in base cand; do
+            PY="$d/NLP_Suite/${{ matrix.py }}"
+            {
+              if [ "$RUNNER_OS" = "Windows" ]; then "$PY" .github/release-checks/dpi_probe.py; echo; fi
+              "$PY" .github/release-checks/tk9_features_probe.py
+            } 2>&1 | tee "results/probe-$d.txt"
+          done
+
+      - name: bundle_gate snapshot and compare
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          for d in base cand; do
+            python tests/bundle_gate.py snapshot "$d/NLP_Suite" -o "results/bundle-$d.json" --pyinstaller python 2>&1 | tee "results/bundle-$d.log"
+          done
+          python tests/bundle_gate.py compare results/bundle-base.json results/bundle-cand.json 2>&1 | tee results/bundle-compare.txt
+
+      - name: gui_layout_gate on both Pythons (same src/)
+        continue-on-error: true
+        timeout-minutes: 60
+        run: |
+          set -o pipefail
+          rc=0
+          for d in base cand; do
+            "$d/NLP_Suite/${{ matrix.py }}" tests/gui_layout_gate.py 2>&1 | tee "results/layout-$d.txt" || rc=1
+            cp tests/gui_layout_gate.log "results/layout-$d.log" || true
+          done
+          exit $rc
+
+      - name: Screenshot gallery on both Pythons
+        continue-on-error: true
+        timeout-minutes: 60
+        run: |
+          for d in base cand; do
+            NLP_GALLERY_NO_BROWSER=1 "$d/NLP_Suite/${{ matrix.py }}" tests/gui_gallery.py 2>&1 | tee "results/gallery-$d.txt"
+            mkdir -p "results/gallery-$d"
+            mv tests/gui_gallery.html tests/gui_screenshots "results/gallery-$d/" 2>/dev/null || true
+          done
+
+      - name: Summary (probes, bundle_gate verdict, layout and gallery counts)
+        if: always()
+        run: |
+          for f in results/probe-base.txt results/probe-cand.txt results/bundle-compare.txt; do echo "===== $f"; cat "$f" 2>/dev/null || echo "(missing)"; done
+          for d in base cand; do
+            echo "===== layout-$d: $(grep -E '^[0-9]+ GUIs:' results/layout-$d.txt 2>/dev/null)"
+            echo "===== gallery-$d: $(ls results/gallery-$d/gui_screenshots 2>/dev/null | wc -l) screenshots"
+          done
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: check-${{ runner.os }}
+          path: results
+          retention-days: 30
+
+  # Tool sweep: each tool's real run() on lib/sampleData, on each zip's own python-env and src/.
+  sweep:
+    needs: build
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-15]
+        which: [base, cand]
+        include:
+          - { os: windows-latest, artifact: NLP-Suite-windows-x64, py: python-env/python.exe }
+          - { os: macos-15, artifact: NLP-Suite-mac-arm64, py: python-env/bin/python3 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: Get the candidate build
+        if: matrix.which == 'cand'
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ matrix.artifact }}
+          path: zip
+      - name: Get the published ${{ env.BASE }} zip
+        if: matrix.which == 'base'
+        run: mkdir -p zip && curl -fSL -o "zip/${{ matrix.artifact }}.zip" "https://github.com/NLP-Suite/NLP-Suite/releases/download/v$BASE/${{ matrix.artifact }}.zip"
+
+      - name: Unzip, and get CoreNLP and MALLET for the recipes that need them
+        run: |
+          set -euo pipefail
+          bash .github/release-checks/unzip_bundle.sh "zip/${{ matrix.artifact }}.zip" bundle
+          rm -rf zip
+          "bundle/NLP_Suite/${{ matrix.py }}" -c "import sys, tkinter; print(sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
+          winpath() { if [ "$RUNNER_OS" = "Windows" ]; then cygpath -m "$1"; else echo "$1"; fi; }
+          mkdir -p ext
+          echo "Software,Installation_path,Download_link" > external_config.csv
+          # nlp.stanford.edu refused the Windows runner (28 Nov); Stanza's own installer downloads from Hugging Face.
+          # If neither works, the CoreNLP recipes are SKIPPED rather than the whole sweep stopping.
+          for url in https://huggingface.co/stanfordnlp/CoreNLP/resolve/main/stanford-corenlp-latest.zip \
+                     https://nlp.stanford.edu/software/stanford-corenlp-latest.zip; do
+            if curl -fSL --connect-timeout 30 --retry 2 -o corenlp.zip "$url"; then
+              python -m zipfile -e corenlp.zip ext && rm corenlp.zip && echo "CoreNLP from $url" && break
+            fi
+            echo "::warning::CoreNLP download failed: $url"
+          done
+          if ls -d ext/stanford-corenlp-* > /dev/null 2>&1; then
+            echo "Stanford CoreNLP,$(winpath "$(ls -d "$PWD"/ext/stanford-corenlp-* | head -1)")," >> external_config.csv
+          else
+            echo "::warning::No CoreNLP: its recipes will be SKIPPED"
+          fi
+          if curl -fSL --connect-timeout 30 --retry 2 -o mallet.tgz https://github.com/mimno/Mallet/releases/download/v202108/Mallet-202108-bin.tar.gz \
+             && tar -xzf mallet.tgz -C ext && rm mallet.tgz; then
+            echo "MALLET,$(winpath "$(ls -d "$PWD"/ext/Mallet-* | head -1)")," >> external_config.csv
+          else
+            echo "::warning::No MALLET: its recipes will be SKIPPED"
+          fi
+          cat external_config.csv
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: pip install openpyxl
+
+      - name: Sweep
+        continue-on-error: true
+        run: python tests/tool_sweep.py run bundle/NLP_Suite -o "sweep-${{ matrix.which }}" --external-config external_config.csv 2>&1 | tee "sweep-${{ matrix.which }}.log"
+
+      - name: Upload the sweep
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sweep-${{ runner.os }}-${{ matrix.which }}
+          path: |
+            sweep-${{ matrix.which }}
+            sweep-${{ matrix.which }}.log
+          retention-days: 30
+
+  sweep-compare:
+    needs: sweep
+    if: always()
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: sweep-${{ runner.os }}-*
+          merge-multiple: true
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: pip install openpyxl
+      - name: Compare
+        run: |
+          set -o pipefail
+          for d in sweep-base sweep-cand; do
+            [ -f "$d/report.jsonl" ] || { echo "::error::$d is missing: that sweep did not run"; exit 1; }
+          done
+          python tests/tool_sweep.py compare sweep-base sweep-cand 2>&1 | tee sweep-compare.txt
+      - name: Upload the comparison
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sweep-compare-${{ runner.os }}
+          path: sweep-compare.txt
+          retention-days: 30
+
+  # The self-updater (docs/future-work.md §14): the baseline's own updater installs the candidate.
+  self-update:
+    needs: build
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, artifact: NLP-Suite-windows-x64 }
+          - { os: macos-15, artifact: NLP-Suite-mac-arm64 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: ${{ matrix.artifact }}
+          path: cand_zip
+      - name: Get the published ${{ env.BASE }} zip
+        run: mkdir -p base_zip && curl -fSL -o "base_zip/${{ matrix.artifact }}.zip" "https://github.com/NLP-Suite/NLP-Suite/releases/download/v$BASE/${{ matrix.artifact }}.zip"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Update ${{ env.BASE }} to the candidate with ${{ env.BASE }}'s own updater
+        run: |
+          set -o pipefail
+          python .github/release-checks/self_update_check.py "base_zip/${{ matrix.artifact }}.zip" "cand_zip/${{ matrix.artifact }}.zip" "$RUNNER_TEMP/selfupdate" 2>&1 | tee self-update.txt
+      - name: Upload the result
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: self-update-${{ runner.os }}
+          path: self-update.txt
+          retention-days: 30

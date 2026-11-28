@@ -3,6 +3,8 @@ name: Build NLP Suite Installers
 # Trigger: manually from the Actions tab, or on tagged releases
 on:
   workflow_dispatch:
+  # release-checks.yml builds the candidate through this workflow
+  workflow_call:
   push:
     tags:
       - 'v*'

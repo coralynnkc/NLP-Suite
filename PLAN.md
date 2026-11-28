@@ -20,7 +20,12 @@ No dependency changes: `requirements*.txt` and the bundled Python (python-build-
 1. `chore/tcl9-trace-add`: the 286 traces ported, and `tk9_fonts_util` for Tk 9's larger fonts on the Mac. On a Tcl 9 env every GUI builds (54 crashed before), records the same popups as on 8.6, and the layout gate matches 8.6 (49 of 50; 11 without the font fix). On `release/v1.6.49`; it changes nothing on 8.6.
 2. `chore/1.6.49-python-3.11.18` (on top of 1): `PBS_TAG` `20261124`, CPython 3.11.18, Tcl/Tk 9.0.4 on the Mac and 8.6.15 on Windows; the build's Tcl check expects 9 on the Mac and 8.6 on Windows (it expected 9 on both, which failed every Windows build).
 3. **Done against 1.6.47 (28 Nov, CI):** sweep 0 regressions on both platforms (only tie order and ~1e-6 float noise); `bundle_gate.py` 0 failures on both; layout gate with dialogs answered: Windows at 1920x1080 50/50 pass on both Tk 8.6.12 and 8.6.15, Mac 6/50 on both Tk 8.6.14 and Tk 9.0.4 with the same numbers but for 5 px in Semantic aggregation (the Mac runner's ~1024 px screen fails the rest, alike on both); Windows process DPI-unaware before and after Tk on both, so 150 % scaling behaves as today; Tk 9 features present on the Mac candidate (SVG photos, `tk print`/`systray`/`sysnotify`, `<TouchpadScroll>`) and absent on Windows; self-updater 1.6.47 → candidate passed on the Mac.
-4. **Before the tag:** after 1.6.48 is published, rerun the release-candidate checks with `baseline` 1.6.48 (Actions tab, "Release candidate checks", Run workflow), which also covers the self-updater 1.6.48 → 1.6.49 (the second python-env swap). On a Mac, by hand: open the 1.6.49 zip's menu and about ten GUIs beside 1.6.47 (text size, clipping, checkboxes), the welcome screen and logo, and Data visualization's two colour buttons (`tkcolorpicker` on Tk 9); `.github/tk9-check/gui_gallery.py` makes a screenshot page of every GUI (the Mac runner cannot take screenshots). Do not tag 1.6.49 before these.
+4. **Before the tag:** after 1.6.48 is published, rerun the release-candidate checks with `baseline` 1.6.48 (Actions tab, "Release candidate checks", Run workflow), which also covers the self-updater 1.6.48 → 1.6.49 (the second python-env swap). On a Mac, by hand: open the 1.6.49 zip's menu and about ten GUIs beside 1.6.47 (text size, clipping, checkboxes), the welcome screen and logo, and Data visualization's two colour buttons (`tkcolorpicker` on Tk 9); `python tests/gui_gallery.py` on the zip's `python-env` makes a screenshot page of every GUI (the Mac runner cannot take screenshots). Do not tag 1.6.49 before these.
+
+5. **Behind the scenes, not in the zip** (so the sweep still points only at the Python bump):
+   - **Release checks in the repo: done on `release/v1.6.49`.** `.github/workflows/release-checks.yml` (Run workflow, `baseline` = last published release), its scripts in `.github/release-checks/`, `workflow_call` in `build-installers.yml`; `tests/gui_harness_util.py` makes `gui_layout_gate.py` and `gui_gallery.py` answer dialogs and start nothing a GUI launches, with a 120 s per-GUI limit that kills the whole process tree (on a runner they hung for hours). CLAUDE.md "Testing" says when to run it.
+   - **Mac screenshots on CI:** the workflow tries to grant the Screen Recording permission to the zips' Pythons on the Mac runner; whether that works shows in the `check (macos-15)` summary. If it does not, the Mac look stays a manual check (item 4).
+   - **Stale branches and PRs** (§9, §13): delete Cora's merged branches, including `fix/updater-swap-start-race` (replaced by `fix/updater-swap-start-race-148`); close the four stale 2024 PRs with a thank-you comment.
 
 ## Still to check on the published releases
 
@@ -31,14 +36,9 @@ On 28 Nov CI ran the **published 1.6.47 Windows and Mac zips** as baselines: the
 
 Ask students who report update problems to send the update log to coralynn.yang@emory.edu.
 
-## 1.6.50: release checks in the repo, and small fixes (mostly behind the scenes)
+## 1.6.50
 
-No dependency or bundled-Python change, so the sweep against 1.6.49 shows only what the code changed. Its checks are run by the workflow this release adds.
-
-- **Release checks into the repo** (from the test branch `claude/tcl9-gui-upgrades-0fr6u2`): `tk9-windows-check.yml` ("Release candidate checks", baseline chosen at start), `gui-checks.yml`, `.github/tk9-check/` (probes, `self_update_check.py`, `unzip_bundle.sh`), and `workflow_call` in `build-installers.yml`. Fold `no_popups.py` and `run_bounded` into `tests/gui_layout_gate.py` itself (on a runner, GUIs that pop up a dialog or launch another program at open hung it for hours) and add `gui_gallery.py` to `tests/` (§7.4 asks for it). Its own PR.
-- **Mac screenshots on CI:** Pillow's `ImageGrab` on the macOS runner returns no image (likely no Screen Recording permission); try granting it, or keep the Mac look a manual check.
 - **WordNet zoom-in list order** (§12.4): still changes between builds on one fixed keyword; find out whether NLTK or its WordNet data differ between the two zips.
-- **Stale branches and PRs** (§9, §13): delete Cora's merged branches, including `fix/updater-swap-start-race` (replaced by `-148`); close the four stale 2024 PRs with a thank-you comment.
 
 ## After 1.6.50
 

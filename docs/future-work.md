@@ -325,7 +325,7 @@ Most of these are about content and chrome, not the widget toolkit; CTk alone fi
 4. **Per-GUI conversion in tranches**, re-running the branch's mechanical recipe on today's files instead of rebasing its 49 commits; use the branch commits as the reference for each GUI's quirks.
 5. **Fold the hubs into the menu** (11.2 #11) and hide what the zip cannot run (§5.1).
 
-Each PR carries before/after screenshots from a gallery script. Add one to `tests/` that runs on a Mac too (the branch's `gui_gallery.py` reads Windows screen scaling; on a Mac `screencapture -R` works, and the GUIs that build only under `__main__` need `runpy`).
+Each PR carries before/after screenshots from `tests/gui_gallery.py` (in `roberto` since 1.6.43; unattended since 1.6.49, and run by the release-check workflow on Windows; the Mac runner cannot take screenshots, so on a Mac run it by hand).
 
 ## 9. Open pull requests
 
