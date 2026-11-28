@@ -130,3 +130,31 @@ def test_the_model_is_downloaded_when_missing(fsc):
         fsc.stanza_langid_pipeline()
     stanza.download.assert_called_once_with(lang="multilingual", verbose=False)
     assert build.call_count == 2
+
+
+class _TiedSpeller:
+    """Two candidates exactly as likely: pyspellchecker's correction() takes max() over a set, so which one
+    won changed from run to run ('Barkskins': 'bearskins' or 'buckskins', the 1.6.47 tool sweep)."""
+
+    def __init__(self, order):
+        self.order = order
+
+    def candidates(self, word):
+        return dict.fromkeys(self.order).keys()  # iteration order as given, like a set's arbitrary one
+
+    def __getitem__(self, w):
+        return {"buckskins": 5, "bearskins": 5, "barkskin": 1}[w]
+
+
+def test_correction_picks_the_same_candidate_among_ties_every_time(fsc):
+    first = fsc.stable_correction(_TiedSpeller(["buckskins", "bearskins", "barkskin"]), "barkskins")
+    second = fsc.stable_correction(_TiedSpeller(["bearskins", "barkskin", "buckskins"]), "barkskins")
+    assert first == second == "bearskins"  # the most likely, and the first of those in alphabetical order
+
+
+def test_correction_without_candidates_is_none(fsc):
+    class NoCandidates:
+        def candidates(self, word):
+            return None
+
+    assert fsc.stable_correction(NoCandidates(), "xqzt") is None

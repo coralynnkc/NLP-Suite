@@ -76,6 +76,24 @@ from Stanza_functions_util import sentence_split_stanza_text, stanzaPipeLine
 import string_similarity_util
 
 
+def stable_correction(speller, word):
+    """pyspellchecker's SpellChecker.correction(word), but the same answer on every run.
+
+    correction() returns max() over a set of candidates, so of two equally likely ones the winner changed
+    from run to run ('Barkskins': 'bearskins' or 'buckskins'). Candidates are taken in alphabetical order,
+    so a tie goes to the first. Like correction(), a candidate differing only in accents is preferred."""
+    candidates = speller.candidates(word)
+    if not candidates:
+        return None
+    candidates = sorted(candidates)
+    strip = getattr(speller, "_remove_diacritics", None)
+    if strip is not None:
+        same_letters = [c for c in candidates if strip(c) == strip(word)]
+        if same_letters:
+            candidates = same_letters
+    return max(candidates, key=speller.__getitem__)
+
+
 def lemmatizing(word):  # edited by Claude Hu 08/2020
     # https://stackoverflow.com/questions/15586721/wordnet-lemmatization-and-pos-tagging-in-python
     pos = ["n", "v", "a", "s", "r"]  # list of postags
@@ -454,7 +472,7 @@ def check_for_typo(
         if word in processed_words:
             status = processed_words[word]
             if status == "Unknown":
-                corrected = speller.correction(word)
+                corrected = stable_correction(speller, word)
                 if corrected != word:
                     return corrected, "Potential typo", similar_words
                 else:
@@ -737,7 +755,7 @@ def check_for_typo(
         #             if (len(word) > 3) and (word not in processed_word_list) and (word.isalpha()):
         #                 processed_wordID = processed_wordID + 1
         #                 speller = SpellChecker()
-        #                 respelled_word = speller.correction(word)
+        #                 respelled_word = stable_correction(speller, word)
         #                 # print("      Processing DISTINCT word " + str(processed_wordID) + "/" + str(
         #                 #     len(distinct_word_list)) + ": " + word)
         #                 if respelled_word != word:
@@ -919,7 +937,7 @@ def check_for_typo(
                 header_row.append(corrected_word)
                 header_row.append(spell_status)
                 speller = SpellChecker()
-                respelled_word = speller.correction(word)
+                respelled_word = stable_correction(speller, word)
                 # print("      Processing DISTINCT word " + str(processed_wordID) + "/" + str(len(distinct_word_list)) + " Row " + str(header_rowID) + "/" + str(len(header_row_list_to_check)) + ":" + word)
                 print(
                     "      Processing DISTINCT word "
@@ -986,7 +1004,7 @@ def check_for_typo(
         for header_row in header_row_list_to_check:
             word = header_row[0]
             speller = SpellChecker()  # Angel
-            respelled_word = speller.correction(word)  # Angel
+            respelled_word = stable_correction(speller, word)  # Angel
             if word not in processed_word_list and respelled_word != word:  # Angel
                 header_row.insert(1, word_freq_dict.get(word))
                 # [('word', Count:int)]
@@ -1255,7 +1273,7 @@ def spellchecking_pyspellchecker(text: str, inputFilename) -> (str, DataFrame):
     for word in tokenize_stanza_text(stanzaPipeLine(text)):
         if word.isalnum():
             original_str_list.append(word)
-            respelled_word = speller.correction(word)
+            respelled_word = stable_correction(speller, word)
             if respelled_word != word:
                 new_str_list_for_df.append(respelled_word)
             else:

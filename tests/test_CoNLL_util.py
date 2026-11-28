@@ -223,3 +223,17 @@ def test_heads_written_as_floats_are_followed():
 
     assert related(first) == ["3", "4"]
     assert related(second) == ["1", "4"]
+
+
+def test_noun_and_verb_lists_come_out_in_the_same_order_every_run(real_pandas, tmp_path):
+    # they went through a set and were written unsorted: Python randomizes string hashing per process, so the
+    # same words came out in a different order on every run (the 1.6.47 and 1.6.49 tool sweeps, future-work 12.4)
+    nouns = [f"noun{i:02d}" for i in range(30)]
+    path = tmp_path / "NLP_CoNLL.csv"
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(HEADER)
+        for i, noun in enumerate(reversed(nouns), 1):
+            writer.writerow([1, noun, noun, "NN", "O", "0", "root", "", "", i, 1, 1, "doc1.txt"])
+    nouns_form_csv = CoNLL_util.get_nouns_verbs_CoNLL(str(path), str(tmp_path))[0]
+    assert list(real_pandas.read_csv(nouns_form_csv)["Nouns"]) == nouns
