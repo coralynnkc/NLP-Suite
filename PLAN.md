@@ -31,20 +31,26 @@ On 28 Nov CI ran the **published 1.6.47 Windows and Mac zips** as baselines: the
 
 Ask students who report update problems to send the update log to coralynn.yang@emory.edu.
 
-## After 1.6.49
+## 1.6.50: release checks in the repo, and small fixes (mostly behind the scenes)
+
+No dependency or bundled-Python change, so the sweep against 1.6.49 shows only what the code changed. Its checks are run by the workflow this release adds.
 
 - **Release checks into the repo** (from the test branch `claude/tcl9-gui-upgrades-0fr6u2`): `tk9-windows-check.yml` ("Release candidate checks", baseline chosen at start), `gui-checks.yml`, `.github/tk9-check/` (probes, `self_update_check.py`, `unzip_bundle.sh`), and `workflow_call` in `build-installers.yml`. Fold `no_popups.py` and `run_bounded` into `tests/gui_layout_gate.py` itself (on a runner, GUIs that pop up a dialog or launch another program at open hung it for hours) and add `gui_gallery.py` to `tests/` (§7.4 asks for it). Its own PR.
 - **Mac screenshots on CI:** Pillow's `ImageGrab` on the macOS runner returns no image (likely no Screen Recording permission); try granting it, or keep the Mac look a manual check.
 - **WordNet zoom-in list order** (§12.4): still changes between builds on one fixed keyword; find out whether NLTK or its WordNet data differ between the two zips.
+- **Stale branches and PRs** (§9, §13): delete Cora's merged branches, including `fix/updater-swap-start-race` (replaced by `-148`); close the four stale 2024 PRs with a thank-you comment.
+
+## After 1.6.50
+
 - **Python 3.14** (future-work §3.4): the only way to Tcl/Tk 9 on Windows, and due before 3.11's end of life (October 2027). Requirements resolve on 3.14 for both platforms; gensim has no 3.14 wheels and must build from source. Its own release, like 1.6.47.
 - **pandas 3, folium 1, ipython 9** (§3.2): 1.6.47 caps them below those versions; moving to each is its own change, tested with the sweep.
 - **Trim the spec further** (§2.1): it keeps spaCy, pandas and the rest for the language advisor, which since #1732 runs on `python-env`. Probe build first.
 - **Performance**, in §6.10's order: next, pandas out of `GUI_util` (§6.3).
-- PR #1682 (spaCy CoNLL IDs, a shared structure) and PR #1683, which needs changes (§9). Close the four stale 2024 PRs with a thank-you comment.
+- PR #1682 (spaCy CoNLL IDs, a shared structure) and PR #1683, which needs changes (§9).
 - Smaller copy left from #1705 (§5.2); the repeated config warning on a first run from source (§5.3).
 - Roberto's decisions on outdated flows: SRL in the zip, Java row, coreference default, N-grams VIEWER, MALLET coherence, reminders (§5.1).
 - Retest and close recent issues that releases may have fixed; fix the open recent bugs (§10). Triage the 2021–2024 backlog (§11).
 - The updater's known limits: long paths, no checksum or resume, the GitHub API rate limit, the silent `git stash` (§15).
 - UI overhaul (§7), as its own releases.
 - Tech debt in §12's order, and the missing chart regression tests (§12.6).
-- Stale remote branches (§13): delete Cora's merged ones; the others are Roberto's call.
+- Other people's stale remote branches (§13): Roberto's call.
