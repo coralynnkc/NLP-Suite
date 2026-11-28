@@ -332,7 +332,7 @@ def open_GUI(*args):
         run_script_util.run_script("file_search_byWord_main.py")
 
 
-extra_GUIs_menu_var.trace_add("write", open_GUI)
+extra_GUIs_menu_var.trace("w", open_GUI)
 
 
 extra_GUIs_var.set(0)

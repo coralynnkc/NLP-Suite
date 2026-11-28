@@ -920,11 +920,11 @@ def check_searchField(*args):
 		outputfile=IO_util.generate_output_file_name(inputFilename.get(),'.csv',"QC",searchField_kw.get() + "_" + searchedCoNLLField.get())
 		outputFilename.set(outputfile)
 		setup_IO_configArray(window,input_output_options)
-searchField_kw.trace_add("write", check_searchField)
+searchField_kw.trace("w", check_searchField)
 
 def check_searchedCoNLLField(*args):
 	outputfile=IO_util.generate_output_file_name(inputFilename.get(),'.csv',"QC",searchField_kw.get() + "_" + searchedCoNLLField.get())
 	outputFilename.set(outputfile)
 	setup_IO_configArray(window,input_output_options)
-searchedCoNLLField.trace_add("write",check_searchedCoNLLField)
+searchedCoNLLField.trace("w",check_searchedCoNLLField)
 """

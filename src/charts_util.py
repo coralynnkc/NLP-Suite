@@ -24,7 +24,6 @@ import warnings
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 
@@ -1412,44 +1411,38 @@ def complete_sentence_index(file_path):
 # datalist is list of algorithms
 # var is variable of choice
 # ntopchoices is the n max values
-def multiple_barchart(datalist, outputFilename, var, ntopchoices):
-    if pd.__version__[0] == "2":
-        mb.showwarning(
-            title="Warning",
-            message="The multiple_barchart algorithm is incompatible with a version of pandas higher than 2.0\n\nIn command line, please, pip unistall pandas and pip install pandas==1.5.2 (or even pip install pandas==1.4.4).\n\nMake sure you are in the right NLP environment by typing conda activate NLP",
-        )
-        return
+def frequency_table(values, var):
+    """How often each value occurs, as a DataFrame with the columns [var, "Frequency"], most frequent first.
 
-    tempdatalist = []
-    for i in datalist:
-        tempdatalist.append(pd.read_csv(i, encoding="utf-8", on_bad_lines="skip"))
-    newDatalist = []
-    for i in tempdatalist:
-        newDatalist.append(
-            pd.DataFrame(i[var].value_counts())
-            .reset_index()
-            .rename(columns={"index": var, var: "Frequency"})
-            .head(ntopchoices)
-        )
-    fig = make_subplots(rows=2, cols=int(len(datalist) / 2) + len(datalist) % 2)
-    cols = 1
-    for i in range(0, len(newDatalist)):
-        if i < int(len(datalist) / 2) + len(datalist) % 2:
-            fig.add_trace(
-                go.Bar(x=newDatalist[i][var], y=newDatalist[i]["Frequency"], name="Algorithm " + str(i + 1)),
-                row=1,
-                col=cols,
+    value_counts().reset_index() names its columns ["index", var] on pandas 1 and [var, "count"] on pandas 2, so
+    code that renamed them for pandas 1 lost the "Frequency" column on pandas 2 (#1779).
+    """
+    counts = pd.Series(values).value_counts()
+    return pd.DataFrame({var: counts.index, "Frequency": counts.to_numpy()})
+
+
+def comparative_bar_charts(csv_files, outputDir, var, top_n=20):
+    """Data visualization, Categorical tab, "Comparative bar charts": the same csv field in several csv files.
+
+    One grouped bar chart: a bar series per file (named after the file), the top_n most frequent values of var in
+    each. Returns the html file, or None (with a warning) when a file lacks var.
+    """
+    frames = []
+    for path in csv_files:
+        df = pd.read_csv(path, encoding="utf-8", on_bad_lines="skip")
+        if var not in df.columns:
+            mb.showwarning(
+                title="Comparative bar charts",
+                message=f'The csv file {os.path.basename(path)} has no field "{var}".\n\n'
+                "Every file compared must have the selected field. Please, check your files and try again.",
             )
-            cols = cols + 1
-    cols = 1
-    for i in range(0, len(newDatalist)):
-        if i >= int(len(datalist) / 2) + len(datalist) % 2:
-            fig.add_trace(
-                go.Bar(x=newDatalist[i][var], y=newDatalist[i]["Frequency"], name="Algorithm " + str(i + 1)),
-                row=2,
-                col=cols,
-            )
-            cols = cols + 1
+            return None
+        frames.append((os.path.splitext(os.path.basename(path))[0], frequency_table(df[var].dropna(), var).head(top_n)))
+    fig = go.Figure([go.Bar(x=list(t[var]), y=list(t["Frequency"]), name=name) for name, t in frames])
+    fig.update_layout(barmode="group", title=f"{var}: frequencies compared across files", xaxis_title=var)
+    fig.update_yaxes(title="Frequency")
+    safe = re.sub(r'[<>:"/\\|?*\s]+', "_", var)
+    outputFilename = os.path.join(outputDir, f"NLP_comparative_bar_chart_{safe}.html")
     fig.write_html(outputFilename)
     return outputFilename
 
@@ -2294,9 +2287,7 @@ def TimeMapper(data, outputFilename, var, date_format_var, cumulative, monthly=N
                 subset = data[data[time_col] <= period]
             else:
                 subset = data[data[time_col] == period]
-            tester = (
-                pd.DataFrame(subset[var].value_counts()).reset_index().rename(columns={"index": var, var: "Frequency"})
-            )
+            tester = frequency_table(subset[var], var)
             # Ensure all categories are present in every frame
             for j in set(data[var]):
                 if j not in set(tester[var]):
@@ -2353,10 +2344,12 @@ def process_and_aggregate_data(data, **kwargs):
     agg_column = kwargs.get("groupby_column")  # GROUP BY column
     select_columns = kwargs.get("select_column", [])  # SELECT columns
     for col, value in conditions.items():
+        if not value or value == [""]:  # no values typed: no filter
+            continue
         if isinstance(value, (list, tuple)):
-            data = data[data[col].isin(value)]
+            data = data[data[col].astype(str).isin([str(v) for v in value])]  # typed values are text
         else:
-            data = data[data[col] == value]
+            data = data[data[col].astype(str) == str(value)]
 
     if not select_columns:
         select_columns = [col for col in data.columns if col != agg_column]
@@ -2544,6 +2537,11 @@ def get_transformation_choice(choice=5):
     return transformations.get(choice, None)
 
 
+def split_search_values(text):
+    """The search values typed on the Categorical tab: comma-separated, with or without spaces."""
+    return [v.strip() for v in str(text).split(",") if v.strip()]
+
+
 def further_group(df, major_parm, small_prm):
     ## majro_parm = str, small_prm = list of string to be regexed against a
     ## as we need to check suffix of string for GROUP BY
@@ -2553,7 +2551,7 @@ def further_group(df, major_parm, small_prm):
         for j in small_prm:
             if re.search(".*" + str(j) + ".*", str(i)):
                 mps_suffix[str(i)] = str(j)
-    df["Real_" + major_parm] = df[major_parm].map(mps_suffix)
+    df["Real_" + major_parm] = df[major_parm].astype(str).map(mps_suffix)  # keys are str: a numeric column too
 
 
 def sql_commands(s, dataFrame):
@@ -2570,7 +2568,7 @@ def sql_commands(s, dataFrame):
     GROUPBY = GROUPBY_s[0]
     add = GROUPBY_s[1]
     if add:
-        all_values = add.split(", ")
+        all_values = split_search_values(add)
         further_group(dataFrame, GROUPBY, all_values)
         print("The function detected string values in input, and they were mapped accordingly")
         GROUPBY = "Real_" + GROUPBY
@@ -2589,7 +2587,7 @@ def sql_commands(s, dataFrame):
     if WHERE_s:
         for condition in WHERE_s:
             cmd = condition[0].split("|")
-            mtc = cmd[1].split(", ")
+            mtc = split_search_values(cmd[1])
             WHERE[cmd[0]] = mtc
     return WHERE, GROUPBY, SELECT
 
@@ -2612,7 +2610,7 @@ def special_sql_commands(s, dataFrame):
     GROUPBY = GROUPBY_s[0]
     add = GROUPBY_s[1]
     if add:
-        all_values = add.split(", ")
+        all_values = split_search_values(add)
         further_group(dataFrame, GROUPBY, all_values)
         print("The function detected string values in input, and they were mapped accordingly")
         GROUPBY = "Real_" + GROUPBY
@@ -2620,7 +2618,7 @@ def special_sql_commands(s, dataFrame):
     if WHERE_s:
         for condition in WHERE_s:
             cmd = condition[0].split("|")
-            mtc = cmd[1].split(", ")
+            mtc = split_search_values(cmd[1])
             WHERE[cmd[0]] = mtc
     return WHERE, GROUPBY
 
@@ -2715,10 +2713,10 @@ def select_and_counting(df, select_and_count):
 def where_data(data, **kwargs):
     conditions = kwargs.get("where_column", {})  # WHERE conditions
     for col, values in conditions.items():
-        if values == "" or values == [""]:
+        if not values or values == [""]:  # no values typed: no filter
             continue
         if isinstance(values, (list, tuple)):
-            data = data[data[col].isin(values)]
+            data = data[data[col].astype(str).isin([str(v) for v in values])]  # typed values are text
     # THIS FUNCTION IS DOING: SELECT FROM DATA WHERE cond_1, cond_2, ... con_n for ** kwargs
     return data
 

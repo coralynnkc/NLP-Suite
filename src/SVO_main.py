@@ -1304,7 +1304,7 @@ def activateCoRefOptions(*args):
         manual_coref_var.set(0)
 
 
-coref_var.trace_add("write", activateCoRefOptions)
+coref_var.trace("w", activateCoRefOptions)
 
 activateCoRefOptions()
 
@@ -1313,7 +1313,7 @@ def changed_filename(tracedInputFile):
     activateCoRefOptions()
 
 
-GUI_util.input_main_dir_path.trace_add("write", lambda x, y, z: changed_filename(GUI_util.input_main_dir_path.get()))
+GUI_util.input_main_dir_path.trace("w", lambda x, y, z: changed_filename(GUI_util.input_main_dir_path.get()))
 # must trace on input_main_dir_path, rather than inputFilename,
 #   because inputFilename is set BEFORE input_main_dir_path in GUI_util and it is not up-to-date
 
@@ -1950,7 +1950,7 @@ def activateFilters(*args):
         google_earth_checkbox.configure(state="disabled")
 
 
-package_var.trace_add("write", activateFilters)
+package_var.trace("w", activateFilters)
 
 activateFilters()
 
@@ -2191,7 +2191,7 @@ def warnUser(*args):
         )
 
 
-GUI_util.input_main_dir_path.trace_add("write", warnUser)
+GUI_util.input_main_dir_path.trace("w", warnUser)
 
 # outside trace since it is not dependent on corpus type
 reminders_util.checkReminder(
@@ -2253,7 +2253,7 @@ def activate_NLP_options(*args):
         # activate_filter_dictionaries()
 
 
-GUI_util.setup_menu.trace_add("write", activate_NLP_options)
+GUI_util.setup_menu.trace("w", activate_NLP_options)
 
 activate_NLP_options()
 

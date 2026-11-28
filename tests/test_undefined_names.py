@@ -21,9 +21,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Files whose hits are left as they are, with the reason. Shrink this list; never grow it for new code.
 KNOWN = {
-    # dead files that PR #1706 deletes
-    "html_annotator_extractor_util_NEW.py": "deleted by PR #1706",
-    "nyt_api_call.py": "deleted by PR #1706",
     # its 6 are fixed on fix/syntactic-analysis-run; remove this line when both have merged
     "syntactic_analysis_ALL_main.py": "fixed on fix/syntactic-analysis-run",
 }

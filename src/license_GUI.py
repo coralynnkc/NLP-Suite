@@ -86,7 +86,7 @@ def save_agreement(*args):
         GUI_util.window.destroy()
 
 
-agreement_checkbox_var.trace_add("write", save_agreement)
+agreement_checkbox_var.trace("w", save_agreement)
 
 # sidebar
 # sidebar = tk.Frame(GUI_util.window, width=900, bg='white', height=640, relief='sunken', borderwidth=2)

@@ -682,7 +682,7 @@ def add_csvFile(window, title, fileType):
 # 			selectedCsvFile_colNum= IO_csv_util.get_columnNumber_from_headerValue(headers, select_csv_field_var.get())
 # 		else:
 # 			selectedCsvFile_colNum= select_csv_field_var.get()-1
-# select_csv_field_var.trace_add('write',activate_csvfile_column)
+# select_csv_field_var.trace('w',activate_csvfile_column)
 
 # add_file_button = tk.Button(window, text='csv file', width=2,height=1,state='disabled',command=lambda: add_csvFile(window,'Select INPUT csv file', [("csv files", "*.csv")]))
 add_file_button = tk.Button(
@@ -820,7 +820,7 @@ def activate_list_options(*args):
     # rename_new_entry.configure(state="disabled")
 
 
-list_var.trace_add("write", activate_list_options)
+list_var.trace("w", activate_list_options)
 
 
 def activate_rename_options(*args):
@@ -850,7 +850,7 @@ def activate_rename_options(*args):
     by_author_checkbox.configure(state="disabled")
 
 
-rename_var.trace_add("write", activate_rename_options)
+rename_var.trace("w", activate_rename_options)
 
 
 def activate_copy_options(*args):
@@ -875,7 +875,7 @@ def activate_copy_options(*args):
     by_author_checkbox.configure(state="disabled")
 
 
-copy_var.trace_add("write", activate_copy_options)
+copy_var.trace("w", activate_copy_options)
 
 
 def activate_move_options(*args):
@@ -900,7 +900,7 @@ def activate_move_options(*args):
     by_author_checkbox.configure(state="disabled")
 
 
-move_var.trace_add("write", activate_move_options)
+move_var.trace("w", activate_move_options)
 
 
 def activate_delete_options(*args):
@@ -921,7 +921,7 @@ def activate_delete_options(*args):
     by_author_checkbox.configure(state="disabled")
 
 
-delete_var.trace_add("write", activate_delete_options)
+delete_var.trace("w", activate_delete_options)
 
 
 def activate_count_options(*args):
@@ -944,7 +944,7 @@ def activate_count_options(*args):
     position_in_string_value.configure(state="disabled")
 
 
-count_file_manager_var.trace_add("write", activate_count_options)
+count_file_manager_var.trace("w", activate_count_options)
 
 
 def activate_split_options(*args):
@@ -982,7 +982,7 @@ def activate_split_options(*args):
         by_substring_checkbox.configure(state="normal")
 
 
-split_file_manager_var.trace_add("write", activate_split_options)
+split_file_manager_var.trace("w", activate_split_options)
 
 by_file_type_var.set(0)
 by_file_type_checkbox = tk.Checkbutton(window, text="By file type", variable=by_file_type_var, onvalue=1, offvalue=0)
@@ -1028,7 +1028,7 @@ def activate_file_type_options(*args):
         file_type_menu.configure(state="disabled")
 
 
-by_file_type_var.trace_add("write", activate_file_type_options)
+by_file_type_var.trace("w", activate_file_type_options)
 
 by_creation_date_checkbox = tk.Checkbutton(
     window, text="By creation & modification date", variable=by_creation_date_var, onvalue=1, offvalue=0
@@ -1141,8 +1141,8 @@ def activate_prefix_substring_options(*args):
     rename_new_entry_var.set("")
 
 
-by_prefix_var.trace_add("write", activate_prefix_substring_options)
-by_substring_var.trace_add("write", activate_prefix_substring_options)
+by_prefix_var.trace("w", activate_prefix_substring_options)
+by_substring_var.trace("w", activate_prefix_substring_options)
 
 by_foldername_var.set(0)
 by_foldername_checkbox = tk.Checkbutton(
@@ -1172,7 +1172,7 @@ def activateFolderCharacterSeparator(*args):
         folder_character_separator.configure(width=2, state="disabled")
 
 
-by_foldername_var.trace_add("write", activateFolderCharacterSeparator)
+by_foldername_var.trace("w", activateFolderCharacterSeparator)
 
 by_embedded_items_var.set(0)
 by_embedded_items_checkbox = tk.Checkbutton(
@@ -1247,7 +1247,7 @@ def activate_numberEmbeddedItems_options(*args):
         include_exclude_checkbox.config(state="disabled")
 
 
-by_embedded_items_var.trace_add("write", activate_numberEmbeddedItems_options)
+by_embedded_items_var.trace("w", activate_numberEmbeddedItems_options)
 
 # applies to list files only
 character_count_file_manager_var.set(0)
@@ -1279,7 +1279,7 @@ def activate_characters_entry_option(*args):
         characters_entry.configure(state="disabled")
 
 
-character_count_file_manager_var.trace_add("write", activate_characters_entry_option)
+character_count_file_manager_var.trace("w", activate_characters_entry_option)
 
 date_format.set("mm-dd-yyyy")
 items_separator_var.set("_")
@@ -1337,7 +1337,7 @@ def check_CoreNLP_dateFields(*args):
         date_position_menu.config(state="disabled")
 
 
-fileName_embeds_date.trace_add("write", check_CoreNLP_dateFields)
+fileName_embeds_date.trace("w", check_CoreNLP_dateFields)
 
 include_subdir_var.set(0)
 include_subdir_checkbox = tk.Checkbutton(

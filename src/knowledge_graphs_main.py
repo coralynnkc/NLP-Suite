@@ -424,7 +424,7 @@ def add_DBpedia_YAGO_sub_class(*args):
         activate_DBpedia_YAGO_Options(y_multiplier_integerSV, confidence_level_lb, confidence_level_entry)
 
 
-sub_class_entry_var.trace_add("write", add_DBpedia_YAGO_sub_class)
+sub_class_entry_var.trace("w", add_DBpedia_YAGO_sub_class)
 
 # to jump to an item in the list that starts with a specific letter (e.g., without) by pressing that letter (e.g., w)
 # https://stackoverflow.com/questions/32747592/can-you-have-a-tkinter-drop-down-menu-that-can-jump-to-an-entry-by-typing
@@ -794,7 +794,7 @@ def activate_class_options(*args):
             ontology_class.configure(state="normal")
 
 
-ontology_class_var.trace_add("write", activate_class_options)
+ontology_class_var.trace("w", activate_class_options)
 
 
 def activate_class_color_combo(*args):
@@ -812,7 +812,7 @@ def activate_class_color_combo(*args):
     #     accept_DBpedia_YAGO_list()  # get current value and store into the dict
 
 
-color_palette_var.trace_add("write", activate_class_color_combo)
+color_palette_var.trace("w", activate_class_color_combo)
 
 
 def activate_DBpedia_YAGO_Options(y_multiplier_integerSV, confidence_level_lb, confidence_level_entry, *args):
@@ -899,8 +899,8 @@ def activate_DBpedia_YAGO_Options(y_multiplier_integerSV, confidence_level_lb, c
             ontology_class.configure(state="disabled")
 
 
-knowledge_graphs_var.trace_add(
-    "write",
+knowledge_graphs_var.trace(
+    "w",
     callback=lambda x, y, z: activate_DBpedia_YAGO_Options(
         y_multiplier_integerSV, confidence_level_lb, confidence_level_entry
     ),

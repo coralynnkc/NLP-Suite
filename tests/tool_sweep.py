@@ -303,8 +303,7 @@ def run_one(name, bundle, sweep, external_config=None):
     os.makedirs(rec_out)
     # the recipe's own config/, so the package switch and the run's settings never touch the bundle
     config_dir = os.path.join(sweep, "_config", name)
-    shutil.rmtree(config_dir, ignore_errors=True)
-    shutil.copytree(os.path.join(bundle, "config"), config_dir)
+    seed_config(bundle, config_dir)
     if external_config:
         shutil.copy(external_config, os.path.join(config_dir, "NLP_setup_external_software_config.csv"))
     record: dict[str, Any] = dict(
@@ -423,6 +422,45 @@ def run_one(name, bundle, sweep, external_config=None):
     record["py_warnings"] = dict(sorted(seen.items(), key=lambda kv: -kv[1])[:15])
     record["traceback"] = record["traceback"][-4000:]
     emit()
+
+
+def seed_config(bundle, config_dir):
+    """A recipe's config/: a copy of the bundle's, with what it lacks taken from lib/config_defaults.
+
+    A zip's config/ is seeded from lib/config_defaults by the build. A source checkout may have none (it is not
+    tracked: a fresh clone or a worktree) or the developer's own, which can lack a file or leave the package
+    or language blank; on 23 Nov a source sweep ran about 40 recipes with language '' for that reason.
+    """
+    import csv
+
+    shutil.rmtree(config_dir, ignore_errors=True)
+    own = os.path.join(bundle, "config")
+    if os.path.isdir(own):
+        shutil.copytree(own, config_dir)
+    else:
+        os.makedirs(config_dir)
+    defaults = os.path.join(bundle, "lib", "config_defaults")
+    if not os.path.isdir(defaults):
+        return
+    for fn in os.listdir(defaults):
+        target = os.path.join(config_dir, fn)
+        if not os.path.isfile(target):
+            shutil.copy(os.path.join(defaults, fn), target)
+    # the package-language row: a blank package, language or encoding takes the default's value
+    fn = "NLP_default_package_language_config.csv"
+    with open(os.path.join(defaults, fn), encoding="utf-8", newline="") as f:
+        default_rows = list(csv.reader(f))
+    with open(os.path.join(config_dir, fn), encoding="utf-8", newline="") as f:
+        rows = list(csv.reader(f))
+    if len(rows) < 2:
+        rows = default_rows
+    else:
+        for col in ("Parser & annotators", "Corpus language", "Language encoding"):
+            i, d = rows[0].index(col) if col in rows[0] else -1, default_rows[0].index(col)
+            if i >= 0 and i < len(rows[1]) and not rows[1][i].strip():
+                rows[1][i] = default_rows[1][d]
+    with open(os.path.join(config_dir, fn), "w", encoding="utf-8", newline="") as f:
+        csv.writer(f).writerows(rows)
 
 
 def set_package(config_dir, package):

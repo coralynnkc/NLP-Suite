@@ -379,13 +379,13 @@ def _run_analysis():
                         )
                         parent_names = DB_PCACE_data_analysis_util.get_setup_simplex_parent(setup_simplex)
                         var_name = parent_names[0] if parent_names else "Object"
-                        charts_util.timechart(
+                        charts_util.TimeMapper(
                             timechart_csv, timechart_output, var_name, date_fmt, cumulative=False, yearly=True
                         )
                         if os.path.isfile(timechart_output):
                             filesToOpen.append(timechart_output)
                 except Exception as e:
-                    print(f"  Timechart generation skipped: {e}")
+                    mb.showwarning(title="Timechart", message=f"The time chart could not be made.\n\n{e}")
             else:
                 mb.showwarning(
                     title="Timechart",
@@ -976,7 +976,7 @@ def _update_required_object_dropdown(*args):
     )
 
 
-object_type_var.trace_add("write", _update_required_object_dropdown)
+object_type_var.trace("w", _update_required_object_dropdown)
 
 
 def _toggle_required():
@@ -1545,7 +1545,7 @@ def update_complex_identifier_dropdown(*args):
     )
 
 
-setup_complex_var.trace_add("write", update_complex_identifier_dropdown)
+setup_complex_var.trace("w", update_complex_identifier_dropdown)
 
 # Drop below the Complex export-options frame (placed under the Complex row) before starting the
 # Simplex row, so the frame and the Simplex row don't overlap.
@@ -1698,7 +1698,7 @@ def _populate_simplex_values(*args):
     )
 
 
-setup_simplex_var.trace_add("write", _populate_simplex_values)
+setup_simplex_var.trace("w", _populate_simplex_values)
 
 simplex_value_type_lb = tk.Label(lookup_tab, text="Simplex data type ")
 lookup_y = GUI_IO_util.placeWidget(lookup_tab, GUI_IO_util.labels_x_coordinate, lookup_y, simplex_value_type_lb, True)
@@ -1787,7 +1787,7 @@ def activate_date_number_text(*args):
         simplex_value_var.set("")
 
 
-simplex_value_type_var.trace_add("write", activate_date_number_text)
+simplex_value_type_var.trace("w", activate_date_number_text)
 
 # Search simplex value → story form row (Look up tab, part 2 of 2) _________________________
 # Reparented to lookup_tab and continues the lookup_y counter (stacks below From data ID). Removing it
@@ -2235,8 +2235,8 @@ def changed_filename(*args):
     clear("Escape")
 
 
-GUI_util.inputFilename.trace_add("write", changed_filename)
-GUI_util.input_main_dir_path.trace_add("write", changed_filename)
+GUI_util.inputFilename.trace("w", changed_filename)
+GUI_util.input_main_dir_path.trace("w", changed_filename)
 
 
 def activate_parents_children(*args):
@@ -2362,8 +2362,8 @@ def activate_parents_children(*args):
 
 
 # Auto-populate parents/children when a complex or simplex is selected
-setup_complex_var.trace_add("write", activate_parents_children)
-setup_simplex_var.trace_add("write", activate_parents_children)
+setup_complex_var.trace("w", activate_parents_children)
+setup_simplex_var.trace("w", activate_parents_children)
 
 table_fields_menu_values = []
 
@@ -3661,7 +3661,7 @@ def _toggle_lemmatize_widgets(*args):
         lemmatize_lang_menu.configure(state="disabled")
 
 
-lemmatize_var.trace_add("write", _toggle_lemmatize_widgets)
+lemmatize_var.trace("w", _toggle_lemmatize_widgets)
 valid_y = GUI_IO_util.placeWidget(
     validation_tab,
     GUI_IO_util.close_button_x_coordinate + 35,
@@ -3823,7 +3823,7 @@ def _on_agg_mode_change(*args):
         )
 
 
-agg_mode_var.trace_add("write", _on_agg_mode_change)
+agg_mode_var.trace("w", _on_agg_mode_change)
 
 agg_mode_menu.bind("<<ComboboxSelected>>", _combobox_release_focus)
 
@@ -4134,7 +4134,7 @@ def _on_inputDir_change(*args):
 
 
 if hasattr(inputDir, "trace"):
-    inputDir.trace_add("write", _on_inputDir_change)
+    inputDir.trace("w", _on_inputDir_change)
 try:
     _set_all_widgets_state("normal")
 except Exception:

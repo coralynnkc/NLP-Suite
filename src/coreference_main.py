@@ -376,7 +376,7 @@ def activate_options(*args):
         )
 
 
-CoRef_var.trace_add("write", activate_options)
+CoRef_var.trace("w", activate_options)
 
 # CoRef_var.set(1)
 # CoRef_checkbox = tk.Checkbutton(window, text='Coreference Resolution, PRONOMINAL (via Stanford CoreNLP - Neural Network)',
@@ -510,7 +510,7 @@ def changed_filename(tracedInputFile):
     activateCoRefOptions()
 
 
-GUI_util.input_main_dir_path.trace_add("write", lambda x, y, z: changed_filename(GUI_util.input_main_dir_path.get()))
+GUI_util.input_main_dir_path.trace("w", lambda x, y, z: changed_filename(GUI_util.input_main_dir_path.get()))
 # must trace on input_main_dir_path, rather than inputFilename,
 #   because inputFilename is set BEFORE input_main_dir_path in GUI_util and it is not up-to-date
 
@@ -521,7 +521,7 @@ GUI_util.input_main_dir_path.trace_add("write", lambda x, y, z: changed_filename
 #     else:
 #         split_coreferenced_files_checkbox.configure(state='disabled')
 #         continue_manual_Coref_var_checkbox.configure(state='disabled')
-# corefed_txt_file_var.trace_add('write', activateTxtFileOptions)
+# corefed_txt_file_var.trace('w', activateTxtFileOptions)
 #
 # activateTxtFileOptions()
 

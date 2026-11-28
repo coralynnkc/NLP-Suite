@@ -911,7 +911,7 @@ def changed_filename(*args):
     getDocLength()
 
 
-GUI_util.inputFilename.trace_add("write", changed_filename)
+GUI_util.inputFilename.trace("w", changed_filename)
 
 changed_filename()
 
@@ -1081,7 +1081,7 @@ def activate_NLP_options(*args):
     language_list = [language]
 
 
-GUI_util.setup_menu.trace_add("write", activate_NLP_options)
+GUI_util.setup_menu.trace("w", activate_NLP_options)
 activate_NLP_options()
 
 if error:

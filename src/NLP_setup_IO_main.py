@@ -765,13 +765,13 @@ def changed_filename(tracedInputFile, tracedInputDir):
     activate_fields()
 
 
-GUI_util.input_main_dir_path.trace_add(
-    "write", lambda x, y, z: changed_filename(GUI_util.inputFilename.get(), GUI_util.input_main_dir_path.get())
+GUI_util.input_main_dir_path.trace(
+    "w", lambda x, y, z: changed_filename(GUI_util.inputFilename.get(), GUI_util.input_main_dir_path.get())
 )
 # must trace on input_main_dir_path, rather than inputFilename,
 #   because inputFilename is set BEFORE input_main_dir_path in GUI_util and it is not up-to-date
-GUI_util.inputFilename.trace_add(
-    "write", lambda x, y, z: changed_filename(GUI_util.inputFilename.get(), GUI_util.input_main_dir_path.get())
+GUI_util.inputFilename.trace(
+    "w", lambda x, y, z: changed_filename(GUI_util.inputFilename.get(), GUI_util.input_main_dir_path.get())
 )
 
 

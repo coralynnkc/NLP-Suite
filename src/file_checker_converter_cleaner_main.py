@@ -433,9 +433,9 @@ def getScript(script):
     activate_all_options()
 
 
-check_tools_var.trace_add("write", lambda x, y, z: getScript(check_tools_var.get()))
-convert_tools_var.trace_add("write", lambda x, y, z: getScript(convert_tools_var.get()))
-clean_tools_var.trace_add("write", lambda x, y, z: getScript(clean_tools_var.get()))
+check_tools_var.trace("w", lambda x, y, z: getScript(check_tools_var.get()))
+convert_tools_var.trace("w", lambda x, y, z: getScript(convert_tools_var.get()))
+clean_tools_var.trace("w", lambda x, y, z: getScript(clean_tools_var.get()))
 
 activate_all_options()
 
@@ -576,7 +576,7 @@ def activate_NLP_options(*args):
     language_list = [language]
 
 
-GUI_util.setup_menu.trace_add("write", activate_NLP_options)
+GUI_util.setup_menu.trace("w", activate_NLP_options)
 activate_NLP_options()
 
 if error:

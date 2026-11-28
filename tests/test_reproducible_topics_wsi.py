@@ -51,6 +51,7 @@ def test_BERTopic_UMAP_gets_a_fixed_seed(tmp_path):
         patch.object(bert_util, "BERTopic") as BERTopic,
         patch.object(bert_util, "SentenceTransformer"),
         patch.object(bert_util.os.path, "isdir", return_value=True),
+        patch.object(bert_util.mb, "showwarning"),  # "BERTopic found too few topics", on the mocked model
     ):
         try:
             bert_util.run_BERTopic(str(tmp_path), str(out), 0, 0)

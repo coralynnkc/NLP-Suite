@@ -338,7 +338,7 @@ def open_extra_GUI(*args):
             run_script_util.run_script("corpus_profiler_main.py")
 
 
-extra_GUIs_menu_var.trace_add("write", open_extra_GUI)
+extra_GUIs_menu_var.trace("w", open_extra_GUI)
 
 # ── 1. Characters: Who & Whom ──
 

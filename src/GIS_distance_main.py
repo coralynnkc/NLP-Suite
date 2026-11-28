@@ -408,7 +408,7 @@ def open_GUI(*args):
         run_script_util.run_script("GIS_symbolic_main.py")
 
 
-extra_GUIs_menu_var.trace_add("write", open_GUI)
+extra_GUIs_menu_var.trace("w", open_GUI)
 
 encoding_var = tk.StringVar()
 # geocode_var=tk.IntVar()
@@ -514,8 +514,8 @@ def activate_options(*args):
         baselineLocation_entry_var.set("")
 
 
-compute_pairwise_distances_var.trace_add("write", activate_options)
-compute_baseline_distances_var.trace_add("write", activate_options)
+compute_pairwise_distances_var.trace("w", activate_options)
+compute_baseline_distances_var.trace("w", activate_options)
 
 videos_lookup = {"No videos available": ""}
 videos_options = "No videos available"

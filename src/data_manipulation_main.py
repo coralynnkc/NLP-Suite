@@ -441,7 +441,7 @@ if __name__ == "__main__":
             elif "visualization" in extra_GUIs_menu_var.get():
                 run_script_util.run_script("data_visualization_main.py")
 
-    extra_GUIs_menu_var.trace_add("write", open_GUI)
+    extra_GUIs_menu_var.trace("w", open_GUI)
 
     pressedPlus = False
 
@@ -521,10 +521,10 @@ if __name__ == "__main__":
         if extract_var.get():
             activate_extract_fields(comingfrom_Plus, comingfrom_OK)
 
-    comparator_var.trace_add("write", lambda x, y, z: extractSelection(False))
-    where_entry_var.trace_add("write", lambda x, y, z: extractSelection(False))
-    and_or_var.trace_add("write", lambda x, y, z: extractSelection(False))
-    # add_extract_options_var.trace_add("write", lambda x, y, z: extractSelection(True))
+    comparator_var.trace("w", lambda x, y, z: extractSelection(False))
+    where_entry_var.trace("w", lambda x, y, z: extractSelection(False))
+    and_or_var.trace("w", lambda x, y, z: extractSelection(False))
+    # add_extract_options_var.trace("w", lambda x, y, z: extractSelection(True))
 
     avoidLoop = False
     error = False
@@ -922,8 +922,8 @@ if __name__ == "__main__":
         where_entry.configure(values=values)
 
     # refresh when either the field or the csv file changes; both determine what the values are
-    select_csv_field_var.trace_add("write", _refresh_where_values)
-    selectedCsvFile_var.trace_add("write", _refresh_where_values)
+    select_csv_field_var.trace("w", _refresh_where_values)
+    selectedCsvFile_var.trace("w", _refresh_where_values)
 
     comp_menu_values = ["<>", "=", ">", ">=", "<", "<="]
     comparator_menu = tk.OptionMenu(window, comparator_var, *comp_menu_values)  # , command=lambda:extractSelection()
@@ -1055,7 +1055,7 @@ if __name__ == "__main__":
         # mergeSelection(False, False)
 
     # single shared field menu drives all operations; merge_reminder2 self-guards on merge_var
-    select_csv_field_var.trace_add("write", merge_reminder2)
+    select_csv_field_var.trace("w", merge_reminder2)
 
     def build_merge_string(comingFrom_Plus, comingFrom_OK):
         if not merge_var.get():
@@ -1164,8 +1164,8 @@ if __name__ == "__main__":
         if not merge_var.get():
             clear("<Escape>")
 
-    selectedCsvFile_var.trace_add("write", lambda x, y, z: changed_filename(selectedCsvFile_var.get()))
-    GUI_util.inputFilename.trace_add("write", lambda x, y, z: changed_filename(GUI_util.inputFilename.get()))
+    selectedCsvFile_var.trace("w", lambda x, y, z: changed_filename(selectedCsvFile_var.get()))
+    GUI_util.inputFilename.trace("w", lambda x, y, z: changed_filename(GUI_util.inputFilename.get()))
 
     def activate_WHERE_options(*args):
         # DEAD in the single-row redesign (no callers; the WHERE-clause enabling now lives in
@@ -1250,9 +1250,9 @@ if __name__ == "__main__":
         rename_var.set(1 if op == "Rename" else 0)
         activate_all_options()
 
-    options_var.trace_add("write", select_operation)
-    select_csv_field_var.trace_add("write", activate_all_options)
-    character_separator_entry_var.trace_add("write", activate_all_options)
+    options_var.trace("w", select_operation)
+    select_csv_field_var.trace("w", activate_all_options)
+    character_separator_entry_var.trace("w", activate_all_options)
 
     ##
     def activate_csv_fields_selection(operation, checkButton, comingFrom_Plus, comingFrom_OK):
@@ -1456,7 +1456,7 @@ if __name__ == "__main__":
     )
 
     # TODO must uncomment
-    # GUI_util.inputFilename.trace_add('write', lambda x, y, z: changed_filename(GUI_util.inputFilename.get()))
+    # GUI_util.inputFilename.trace('w', lambda x, y, z: changed_filename(GUI_util.inputFilename.get()))
     # changed_filename(inputFilename.get())
 
     if (GUI_util.input_main_dir_path.get() != "") or (os.path.basename(GUI_util.inputFilename.get())[-4:] != ".csv"):

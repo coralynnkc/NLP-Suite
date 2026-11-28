@@ -48,7 +48,11 @@ WAIT_FOR_CLOSE_SECONDS = 3600
 MANIFEST = "lib/release_manifest.tsv"
 HASH_LIMIT = 16 << 20  # files above this are compared by size only (models, DLLs: nobody edits them)
 CARRY_LIST = "carry.txt"  # in the staging folder: the user's files the swap script moves into the new version
-STARTED_FLAG = "started"  # written by the swap script as its first act, so the app knows it is running
+# Claimed (created, only if it is not there yet) by the swap script as its first act, so the app knows it is
+# running; claimed by the app instead when it gives up waiting, so a script that starts later stops untouched.
+STARTED_FLAG = "started"
+# Windows PowerShell took 30 s to start on a GitHub runner (28 Nov 2026); antivirus can make it slower still.
+SWAP_START_TIMEOUT = 120.0
 
 
 def is_zip_install(NLPPath, frozen=None):
@@ -342,7 +346,11 @@ VERSION={q(version)}
 LOG={q(log)}
 KEEP_BACKUP={1 if keep_backup else 0}
 exec >>"$LOG" 2>&1
-: > "$STAGE/{STARTED_FLAG}"
+# claim the start flag; if the NLP Suite already took it, it stopped waiting and deletes the staging folder
+if ! (set -C; : > "$STAGE/{STARTED_FLAG}") 2>/dev/null; then
+    echo "$(date): the NLP Suite stopped waiting for this updater before it started; nothing was changed"
+    exit 0
+fi
 echo "$(date): updating the NLP Suite in $APP to $VERSION"
 
 tell() {{
@@ -449,7 +457,15 @@ $Version = {q(version)}
 $Log = {q(log)}
 $KeepBackup = ${"true" if keep_backup else "false"}
 $ProgressPreference = 'SilentlyContinue'
-[System.IO.File]::WriteAllText((Join-Path $Stage '{STARTED_FLAG}'), '')
+# claim the start flag; if the NLP Suite already took it, it stopped waiting and deletes the staging folder
+try {{
+    [System.IO.File]::Open((Join-Path $Stage '{STARTED_FLAG}'), [System.IO.FileMode]::CreateNew).Close()
+}} catch {{
+    try {{
+        Add-Content -LiteralPath $Log -Value "$(Get-Date): the NLP Suite stopped waiting for this updater before it started; nothing was changed"
+    }} catch {{ }}
+    exit 0
+}}
 Start-Transcript -LiteralPath $Log -Append | Out-Null
 Write-Output "$(Get-Date): updating the NLP Suite in $App to $Version"
 
@@ -643,16 +659,28 @@ def launch_swap_script(script, sys_platform=None):
         )
 
 
-def swap_script_started(stage, timeout=30.0, poll=0.5):
-    """True once the swap script has written its start flag. Group policy or AppLocker can stop
-    PowerShell scripts from running at all; without this check the user would wait for nothing."""
+def swap_script_started(stage, timeout=SWAP_START_TIMEOUT, poll=0.5):
+    """True once the swap script has claimed its start flag. Group policy or AppLocker can stop
+    PowerShell scripts from running at all; without this check the user would wait for nothing.
+
+    On a timeout the app claims the flag itself, with the same create-only-if-absent the script uses, so
+    exactly one of the two wins: a script that starts later finds the flag taken and exits without moving
+    anything (False: the staging folder is then safe to delete); if the script got there first, it is
+    running (True). Deleting the staging folder under a script that had just started left it nothing to
+    install (28 Nov 2026)."""
     flag = os.path.join(stage, STARTED_FLAG)
     end = time.monotonic() + timeout
     while time.monotonic() < end:
         if os.path.exists(flag):
             return True
         time.sleep(poll)
-    return os.path.exists(flag)
+    try:
+        fd = os.open(flag, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        return True
+    os.write(fd, b"taken by the NLP Suite, which stopped waiting for the updater")
+    os.close(fd)
+    return False
 
 
 class _ProgressWindow:

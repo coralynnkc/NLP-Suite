@@ -243,12 +243,12 @@ def activate_all_options(*args):
         merge_embed_filenames_inStringSeparators_var.set(0)
 
 
-merge_embed_filenames_inStringSeparators_var.trace_add("write", activate_all_options)
-merge_embed_filenames_inStringSeparators_var.trace_add("write", activate_all_options)
-merge_embed_subdir_name_var.trace_add("write", activate_all_options)
-merge_save_fileName_var.trace_add("write", activate_all_options)
-merge_embed_subdir_name_var.trace_add("write", activate_all_options)
-merge_subdir_var.trace_add("write", activate_all_options)
+merge_embed_filenames_inStringSeparators_var.trace("w", activate_all_options)
+merge_embed_filenames_inStringSeparators_var.trace("w", activate_all_options)
+merge_embed_subdir_name_var.trace("w", activate_all_options)
+merge_save_fileName_var.trace("w", activate_all_options)
+merge_embed_subdir_name_var.trace("w", activate_all_options)
+merge_subdir_var.trace("w", activate_all_options)
 
 activate_all_options()
 

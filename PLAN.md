@@ -6,20 +6,15 @@ What to do before tagging the next release, and what comes after it. The finding
 
 ## Next: 1.6.48, cleanup and what the sweep left
 
-No dependency changes: `requirements*.txt` and the bundled Python (python-build-standalone `20251217`) stay as in 1.6.47, so the sweep against 1.6.47 shows only what the code changed. In order:
+No dependency changes: `requirements*.txt` and the bundled Python (python-build-standalone `20251217`) stay as in 1.6.47, so the sweep against 1.6.47 shows only what the code changed.
 
-1. **Tests, one file per `src/` module: PR #1803.** Rebase on `roberto`. 1.6.47 added two tests to `test_WSI.py`, which #1803 splits: they go to `test_WSI_classes.py`. #1801 has merged, so also fold its two BERT test files (`test_BERT_sentiment_truncation.py`, `test_BERT_word_embeddings.py`) into `test_BERT_util.py`. Pure move: `pytest --collect-only` counts the same tests before and after.
-2. **The rest of #1706** (§1.1): the one-off `src/_*.py` scripts, the unused modules, `post_build_fixup.py`, `wiki-draft-About.md`, `build-family-viewer.yml`. The family-viewer worry is settled (23 Nov): the viewer (`family_archive_app.py`, `gedcom_to_csv.py`) moved to a private repo on 16 Jun 2026 and imported only pandas, geopy and the standard library, nothing #1706 deletes; `build-family-viewer.yml` builds two spec files that are no longer in the repo. Rebase #1706 on `roberto`, drop what 1.6.47 already deleted, merge once Roberto agrees.
-3. **Left from the sweep** (§10): #1779 (functions that do not exist, e.g. Comparative bar charts); the categorical treemap, sunburst and colormap charts stop with "No search values found".
-4. **`tool_sweep.py` on a source checkout:** seed each recipe's `config/` from `lib/config_defaults` when the folder being swept has none. On 23 Nov a source sweep ran about 40 recipes with no language set (VADER: "your language is ''"), so it could not stand in for a zip sweep.
-5. **Checks before the tag** (§14): tool sweep of the candidate against **1.6.47** (sweep the published 1.6.47 zip first; until then `~/Documents/NLP_output/tool_sweep/1.6.47-rc2` plus `1.6.47-rc3-wsi2` for WSI), `bundle_gate.py` against a 1.6.47 snapshot, the self-updater 1.6.47 → 1.6.48. After promotion, merge the release branch back into `roberto` with a merge commit (#1804 did it for 1.6.47).
+**The candidate is `release/v1.6.48`** (28 Nov): #1803 (tests one file per module), #1779 and the categorical charts, the source-checkout sweep config, the dialog-free tests (`fix/tests-no-real-dialogs`), the tie-order fix (`fix/tie-order`, §12.4), the self-updater start race (`fix/updater-swap-start-race-148`, §15), #1706 (`chore/remove-dead-files`), and the version bump. `pytest tests/` 972 passed; `gui_smoke.py` crash list the same as `roberto`'s (Linux).
+
+1. **Checks before the tag** (§14): tool sweep of the candidate against **1.6.47**: the published zip was swept on 27 Nov, `~/Documents/NLP_output/tool_sweep/1.6.47` (113 ok, 8 EMPTY, 8 WARNED; against rc2 0 regressions, only tie order, §12.4), `bundle_gate.py` against a 1.6.47 snapshot, the self-updater 1.6.47 → 1.6.48. After promotion, merge the release branch back into `roberto` with a merge commit (#1804 did it for 1.6.47).
 
 ## 1.6.49: Tcl/Tk 9, and the newest CPython 3.11 (§3.3)
 
-1.6.47 bundles CPython 3.11.14 from python-build-standalone `20251217`, the last release with Tcl/Tk 8.6. The newest 3.11 (3.11.18, `20261124`) comes only with Tcl/Tk 9, which crashed 54 GUIs at open in the first 1.6.47 candidate. Porting `src/` to Tcl 9 lets the bundled Python take four more CPython patch releases. Its own release, because it touches every GUI. Where it stands (27 Nov, §3.3):
-1. `chore/tcl9-trace-add`: the 286 traces ported, and `tk9_fonts_util` for Tk 9's larger fonts on the Mac. On a Tcl 9 env every GUI builds (54 crashed before), records the same popups as on 8.6, and the layout gate matches 8.6 (49 of 50; 11 without the font fix). Merges before 1.6.48's tag or after it; it changes nothing on 8.6.
-2. `chore/1.6.49-python-3.11.18` (on top of 1): `PBS_TAG` `20261124`, CPython 3.11.18, Tcl/Tk 9.0.4, the build's Tcl check flipped to 9.
-3. Before the tag: a candidate build, the tool sweep against 1.6.48, the bundle gate, the self-updater 1.6.48 → 1.6.49, and a Windows pass: `gui_layout_gate.py` on the Windows 3.11.18 build at 100 % and at 150 % display scaling, with Tk 8.6 beside it. The Suite does not declare itself DPI-aware; if Tk 9 does on its own, Windows stops scaling the window as one picture and text outgrows the placed coordinates, as on the Mac before `tk9_fonts_util`. Do not tag 1.6.49 before this.
+1.6.47 bundles CPython 3.11.14 from python-build-standalone `20251217`, the last release with Tcl/Tk 8.6. The newest 3.11 (3.11.18, `20261110`) comes only with Tcl/Tk 9, which crashed 54 GUIs at open in the first 1.6.47 candidate. Porting `src/` to Tcl 9 lets the bundled Python take four more CPython patch releases. Its own release, because it touches every GUI. Plan in §3.3.
 
 ## Still to check on the published releases
 

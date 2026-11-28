@@ -1251,7 +1251,7 @@ def _toggle_lemmatize_widgets(*args):
         lemmatize_lang_menu.configure(state="disabled")
 
 
-lemmatize_var.trace_add("write", _toggle_lemmatize_widgets)
+lemmatize_var.trace("w", _toggle_lemmatize_widgets)
 y_multiplier_integer = GUI_IO_util.placeWidget(
     window,
     GUI_IO_util.close_button_x_coordinate + 35,
@@ -1415,7 +1415,7 @@ def _on_agg_mode_change(*args):
         )
 
 
-agg_mode_var.trace_add("write", _on_agg_mode_change)
+agg_mode_var.trace("w", _on_agg_mode_change)
 
 agg_mode_menu.bind("<<ComboboxSelected>>", _combobox_release_focus)
 
@@ -1726,7 +1726,7 @@ def _on_inputDir_change(*args):
 
 
 if hasattr(inputDir, "trace"):
-    inputDir.trace_add("write", _on_inputDir_change)
+    inputDir.trace("w", _on_inputDir_change)
 
 # ── Help buttons ────────────────────────────────────────────────────────────
 

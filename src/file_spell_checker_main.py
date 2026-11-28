@@ -491,7 +491,7 @@ def activate_NER_list_entry(*args):
         NER_list = [selected_NER_list_var.get()]
 
 
-NER_value_var.trace_add("write", activate_NER_list_entry)
+NER_value_var.trace("w", activate_NER_list_entry)
 activate_NER_list_entry()
 
 similarity_value_var.set(80)
@@ -620,11 +620,11 @@ def activate_all_options(*args):
         Levenshtein_distance_checkbox.configure(state="normal")
 
 
-# Levenshtein_distance_var.trace_add('write', activate_all_options)
-# by_all_words_var.trace_add('write', activate_all_options)
-# bydictionary_value_var.trace_add('write', activate_all_options)
-# byNER_value_var.trace_add('write', activate_all_options)
-# spelling_checker_var.trace_add('write', activate_all_options)
+# Levenshtein_distance_var.trace('w', activate_all_options)
+# by_all_words_var.trace('w', activate_all_options)
+# bydictionary_value_var.trace('w', activate_all_options)
+# byNER_value_var.trace('w', activate_all_options)
+# spelling_checker_var.trace('w', activate_all_options)
 
 activate_all_options()
 

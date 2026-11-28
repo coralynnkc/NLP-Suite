@@ -820,10 +820,12 @@ def get_nouns_verbs_CoNLL(inputFilename, output_dir):
             noun_form_set.add(form)
             noun_lemma_set.add(lemma)
 
-    verbs_form_df = pd.DataFrame(verb_form_set, columns=["Verbs"])
-    verbs_lemma_df = pd.DataFrame(verb_lemma_set, columns=["Verbs"])
-    nouns_form_df = pd.DataFrame(noun_form_set, columns=["Nouns"])
-    nouns_lemma_df = pd.DataFrame(noun_lemma_set, columns=["Nouns"])
+    # sorted: a set's order changes from run to run (Python randomizes string hashing per process), and the
+    # lists and every WordNet/FrameNet/VerbNet table built from them came out in a different order each time
+    verbs_form_df = pd.DataFrame(sorted(verb_form_set, key=str), columns=["Verbs"])
+    verbs_lemma_df = pd.DataFrame(sorted(verb_lemma_set, key=str), columns=["Verbs"])
+    nouns_form_df = pd.DataFrame(sorted(noun_form_set, key=str), columns=["Nouns"])
+    nouns_lemma_df = pd.DataFrame(sorted(noun_lemma_set, key=str), columns=["Nouns"])
 
     nouns_form_csv = os.path.join(output_dir, os.path.basename(inputFilename[:-4]) + "_nouns_form.csv")
     nouns_lemma_csv = os.path.join(output_dir, os.path.basename(inputFilename[:-4]) + "_nouns_lemma.csv")

@@ -624,7 +624,7 @@ def check_language(*args):
             add_language_button.configure(state="disabled")
 
 
-language_var.trace_add("write", check_language)
+language_var.trace("w", check_language)
 
 check_language()
 
@@ -697,7 +697,7 @@ def changed_NLP_package(*args):
     changed_NLP_package_set_parsers()
 
 
-package_var.trace_add("write", changed_NLP_package)
+package_var.trace("w", changed_NLP_package)
 
 changed_NLP_package()
 

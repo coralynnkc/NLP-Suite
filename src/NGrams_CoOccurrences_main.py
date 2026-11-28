@@ -617,7 +617,7 @@ def open_GUI(*args):
             run_script_util.run_script("file_search_byWord_main.py")
 
 
-extra_GUIs_menu_var.trace_add("write", open_GUI)
+extra_GUIs_menu_var.trace("w", open_GUI)
 
 Ngrams_compute_var.set(0)
 Ngrams_compute_checkbox = tk.Checkbutton(
@@ -798,7 +798,7 @@ def activate_ngrams_options(*args):
         ngrams_options_menu.configure(state="normal")
 
 
-ngrams_options_menu_var.trace_add("write", activate_ngrams_options)
+ngrams_options_menu_var.trace("w", activate_ngrams_options)
 
 activate_ngrams_options()
 
@@ -959,7 +959,7 @@ def activate_viewer_options(*args):
         viewer_options_menu.configure(state="normal")
 
 
-viewer_options_menu_var.trace_add("write", activate_viewer_options)
+viewer_options_menu_var.trace("w", activate_viewer_options)
 
 activate_viewer_options()
 
@@ -1245,7 +1245,7 @@ def get_year_group(*args):
         return number_of_years
 
 
-temporal_aggregation_var.trace_add("write", get_year_group)
+temporal_aggregation_var.trace("w", get_year_group)
 
 
 def check_dateFields(*args):
@@ -1257,7 +1257,7 @@ def check_dateFields(*args):
         temporal_aggregation_menu.config(state="disabled")
 
 
-date_options.trace_add("write", check_dateFields)
+date_options.trace("w", check_dateFields)
 
 
 def clear(e):
@@ -1550,7 +1550,7 @@ def activate_NLP_options(*args):
     language_list = [language]
 
 
-GUI_util.setup_menu.trace_add("write", activate_NLP_options)
+GUI_util.setup_menu.trace("w", activate_NLP_options)
 activate_NLP_options()
 
 if error:

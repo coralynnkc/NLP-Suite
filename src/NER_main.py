@@ -814,7 +814,7 @@ def add_NER_tag(coming_from_add, coming_from_reset):
         reset_NER_button.configure(state="normal")
 
 
-NER_tag_var.trace_add("write", lambda x, y, z: add_NER_tag(coming_from_add, coming_from_reset))
+NER_tag_var.trace("w", lambda x, y, z: add_NER_tag(coming_from_add, coming_from_reset))
 
 add_NER_tag(coming_from_add, coming_from_reset)
 
@@ -918,7 +918,7 @@ def activate_NER_Options(coming_from_add, coming_from_reset):
             )
 
 
-NER_packages_var.trace_add("write", lambda x, y, z: activate_NER_Options(coming_from_add, coming_from_reset))
+NER_packages_var.trace("w", lambda x, y, z: activate_NER_Options(coming_from_add, coming_from_reset))
 
 # activate_NER_Options(coming_from_add, coming_from_reset)
 

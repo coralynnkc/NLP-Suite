@@ -388,9 +388,9 @@ def _enable_run_button(*args):
         GUI_util.run_button.configure(state="normal")
 
 
-extract_var.trace_add("write", _enable_run_button)
-map_var.trace_add("write", _enable_run_button)
-distribution_var.trace_add("write", _enable_run_button)
+extract_var.trace("w", _enable_run_button)
+map_var.trace("w", _enable_run_button)
+distribution_var.trace("w", _enable_run_button)
 
 
 # ---- INPUT CSV file — smart picker (lists csv files found for the corpus) ---
@@ -578,7 +578,7 @@ y_multiplier_integer = GUI_IO_util.placeWidget(
     "The selected GUI opens without pressing RUN.",
 )
 
-extra_GUIs_menu_var.trace_add("write", open_GUI)
+extra_GUIs_menu_var.trace("w", open_GUI)
 
 
 # ---- BUILD — extract the actor-in-space table from a text corpus -----------
@@ -761,7 +761,7 @@ def refresh_columns(*args):
         menu.configure(state="normal" if cols else "disabled")
 
 
-csv_file_var.trace_add("write", refresh_columns)
+csv_file_var.trace("w", refresh_columns)
 
 # Receive a csv pushed from a producer GUI (e.g. the SVO extractor), like the CoNLL analyzer.
 if len(sys.argv) > 1 and os.path.isfile(sys.argv[1]) and sys.argv[1].lower().endswith(".csv"):

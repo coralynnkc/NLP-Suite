@@ -358,7 +358,7 @@ def open_GUI(*args):
             run_script_util.run_script("corpus_profiler_main.py")
 
 
-extra_GUIs_menu_var.trace_add("write", open_GUI)
+extra_GUIs_menu_var.trace("w", open_GUI)
 
 corpus_statistics_var.set(0)
 corpus_statistics_checkbox = tk.Checkbutton(
@@ -426,7 +426,7 @@ def activate_corpus_options(*args):
         corpus_text_options_menu.configure(state="disabled")
 
 
-corpus_statistics_var.trace_add("write", activate_corpus_options)
+corpus_statistics_var.trace("w", activate_corpus_options)
 
 corpus_statistics_byPOS_var.set(0)
 corpus_statistics_byPOS_checkbox = tk.Checkbutton(

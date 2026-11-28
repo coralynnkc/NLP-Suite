@@ -461,8 +461,8 @@ def setup_parsers_annotators_checkbox(NLP_package_language_config):
         setup_parsers_annotators_OK_checkbox_var.set(0)
 
 
-setup_parsers_annotators_OK_checkbox_var.trace_add(
-    "write", lambda x, y, z: setup_parsers_annotators_checkbox(NLP_package_language_config)
+setup_parsers_annotators_OK_checkbox_var.trace(
+    "w", lambda x, y, z: setup_parsers_annotators_checkbox(NLP_package_language_config)
 )
 
 setup_parsers_annotators_checkbox(NLP_package_language_config)

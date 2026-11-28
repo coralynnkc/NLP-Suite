@@ -278,7 +278,7 @@ def activate_plot_options(*args):
         dim_menu.configure(state="disabled")
 
 
-vis_menu_var.trace_add("write", activate_plot_options)
+vis_menu_var.trace("w", activate_plot_options)
 
 
 ## option for BERT
@@ -677,7 +677,7 @@ def changed_filename(tracedInputFile):
     clear("<Escape>")
 
 
-GUI_util.inputFilename.trace_add("write", lambda x, y, z: changed_filename(GUI_util.inputFilename.get()))
+GUI_util.inputFilename.trace("w", lambda x, y, z: changed_filename(GUI_util.inputFilename.get()))
 
 # change the value of the readMe_message
 readMe_message = "This Python 3 script analyzes a set of documents for Gensim Word2Vec or BERT context-dependent word embeddings.\n\nIn INPUT the algorithms expect either a single txt file or a set of txt files in a directory or a csv file containing each word, their n-dimensional vectors, sentence, document, the output of a previous Word2Vec run with txt file(s) in input.\n\nIn OUTPUT, the algorithms display the multi-dimensional output vectors in an html interactive file in either a 2- or 3-dimensional space. To facilitate the search for words in the vsual output, the algorithms also produce a csv file with the Eucledian distances of every word with every other word for the 10 most-frequent words."

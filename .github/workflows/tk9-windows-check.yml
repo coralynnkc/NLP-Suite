@@ -30,6 +30,7 @@ env:
   DO_NOT_TRACK: '1'
   NLP_SILENT: '1'
   PYTHONIOENCODING: utf-8
+  PYTHONUNBUFFERED: '1'
 
 jobs:
   build:
@@ -74,6 +75,12 @@ jobs:
           python-version: '3.11'
       - run: pip install pyinstaller
 
+      - name: A 1920x1080 screen on Windows (the runner's 1024x768 squeezes every 1350 px window)
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        shell: pwsh
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+
       - name: Tk probes (DPI on Windows only)
         continue-on-error: true
         run: |
@@ -96,6 +103,7 @@ jobs:
 
       - name: gui_layout_gate on both Pythons (same src/)
         continue-on-error: true
+        timeout-minutes: 60
         run: |
           set -o pipefail
           rc=0
@@ -107,9 +115,19 @@ jobs:
 
       - name: Screenshot gallery on both Pythons
         continue-on-error: true
+        timeout-minutes: 60
         run: |
           for d in base cand; do
             GALLERY_OUT="results/gallery-$d" "$d/NLP_Suite/${{ matrix.py }}" .github/tk9-check/gui_gallery.py 2>&1 | tee "results/gallery-$d.txt"
+          done
+
+      - name: Summary (probes, bundle_gate verdict, layout and gallery counts)
+        if: always()
+        run: |
+          for f in results/probe-base.txt results/probe-cand.txt results/bundle-compare.txt; do echo "===== $f"; cat "$f" 2>/dev/null || echo "(missing)"; done
+          for d in base cand; do
+            echo "===== layout-$d: $(grep -E '^[0-9]+ GUIs:' results/layout-$d.txt 2>/dev/null)"
+            echo "===== gallery-$d: $(ls results/gallery-$d/gui_screenshots 2>/dev/null | wc -l) screenshots"
           done
 
       - name: Upload results

@@ -343,7 +343,7 @@ def open_GUI(*args):
             run_script_util.run_script("semantic_aggregation_main.py")
 
 
-extra_GUIs_menu_var.trace_add("write", open_GUI)
+extra_GUIs_menu_var.trace("w", open_GUI)
 
 search_options_menu_var.set("Case sensitive (default)")
 search_options_menu_lb = tk.Label(window, text="Search options")
@@ -485,7 +485,7 @@ def activate_search_options(*args):
         search_options_menu.configure(state="normal")
 
 
-search_options_menu_var.trace_add("write", activate_search_options)
+search_options_menu_var.trace("w", activate_search_options)
 
 activate_search_options()
 
@@ -892,7 +892,7 @@ def activate_NLP_options(*args):
     language_list = [language]
 
 
-GUI_util.setup_menu.trace_add("write", activate_NLP_options)
+GUI_util.setup_menu.trace("w", activate_NLP_options)
 activate_NLP_options()
 
 if error:

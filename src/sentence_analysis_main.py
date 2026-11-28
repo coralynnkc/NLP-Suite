@@ -332,9 +332,7 @@ def getScript(script):
     script_to_run, IO_values = IO_files_util.getScript(pydict, script)
 
 
-visualize_bySentenceIndex_options_var.trace_add(
-    "write", lambda x, y, z: getScript(visualize_bySentenceIndex_options_var.get())
-)
+visualize_bySentenceIndex_options_var.trace("w", lambda x, y, z: getScript(visualize_bySentenceIndex_options_var.get()))
 
 visualize_sentence_structure_var.set(0)
 visualize_sentence_structure_checkbox = tk.Checkbutton(

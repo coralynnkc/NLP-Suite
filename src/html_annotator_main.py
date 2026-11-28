@@ -525,7 +525,7 @@ def changed_dictionary_filename(*args):
             csv_field2_menu.configure(state="disabled")
 
 
-html_annotator_dictionary_file_var.trace_add("write", changed_dictionary_filename)
+html_annotator_dictionary_file_var.trace("w", changed_dictionary_filename)
 
 changed_dictionary_filename()
 
@@ -574,8 +574,8 @@ def get_csv_fieldValues(*args):
     # 		color_palette_dict_var.set('red')
 
 
-csv_field1_var.trace_add("write", get_csv_fieldValues)
-csv_field2_var.trace_add("write", get_csv_fieldValues)
+csv_field1_var.trace("w", get_csv_fieldValues)
+csv_field2_var.trace("w", get_csv_fieldValues)
 
 get_csv_fieldValues()
 
@@ -608,7 +608,7 @@ def activate_color_palette_dict_menu(*args):
             color_palette_dict_menu.configure(state="disabled")
 
 
-color_palette_dict_var.trace_add("write", activate_color_palette_dict_menu)
+color_palette_dict_var.trace("w", activate_color_palette_dict_menu)
 
 bold_dict_var.set(1)
 bold_checkbox = tk.Checkbutton(window, text="Bold", state="disabled", variable=bold_dict_var, onvalue=1, offvalue=0)
@@ -635,8 +635,8 @@ def activateDictionary(*args):
         # csv_field_value_menu.configure(state='disabled')
 
 
-html_annotator_dictionary_var.trace_add("write", activateDictionary)
-html_annotator_add_dictionary_var.trace_add("write", activateDictionary)
+html_annotator_dictionary_var.trace("w", activateDictionary)
+html_annotator_add_dictionary_var.trace("w", activateDictionary)
 
 activateDictionary()
 
@@ -677,7 +677,7 @@ def di_activateCsvFieldValue(*args):
     color_palette_dict_menu.configure(state="normal")
 
 
-csv_field_value_var.trace_add("write", di_activateCsvFieldValue)
+csv_field_value_var.trace("w", di_activateCsvFieldValue)
 
 di_activateCsvFieldValue()
 

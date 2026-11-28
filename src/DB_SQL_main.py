@@ -564,7 +564,7 @@ def _auto_build_sqlite(*args):
         os.makedirs(sql_subdir)
 
 
-GUI_util.input_main_dir_path.trace_add("write", _auto_build_sqlite)
+GUI_util.input_main_dir_path.trace("w", _auto_build_sqlite)
 
 
 def view_relations():
@@ -854,7 +854,7 @@ def _update_required_object_dropdown_sql(*args):
     )
 
 
-object_type_var_sql.trace_add("write", _update_required_object_dropdown_sql)
+object_type_var_sql.trace("w", _update_required_object_dropdown_sql)
 
 
 def _toggle_required_sql():
@@ -939,7 +939,7 @@ def get_table_list(*args):
     _populating_tables = False
 
 
-select_SQLite_DB_var.trace_add("write", get_table_list)
+select_SQLite_DB_var.trace("w", get_table_list)
 
 
 def _show_active_db(*args):
@@ -954,7 +954,7 @@ def _show_active_db(*args):
     window.title(GUI_label + ("  —  " + os.path.basename(db) if db else ""))
 
 
-select_SQLite_DB_var.trace_add("write", _show_active_db)
+select_SQLite_DB_var.trace("w", _show_active_db)
 
 
 def _add_typeahead(combo):
@@ -1252,10 +1252,10 @@ def _add_object():
 
 
 add_object_btn.configure(command=_add_object)
-source_complex_var.trace_add("write", _update_extra_targets_label)
-source_simplex_var.trace_add("write", _update_extra_targets_label)
-target_complex_var.trace_add("write", _update_extra_targets_label)
-target_simplex_var.trace_add("write", _update_extra_targets_label)
+source_complex_var.trace("w", _update_extra_targets_label)
+source_simplex_var.trace("w", _update_extra_targets_label)
+target_complex_var.trace("w", _update_extra_targets_label)
+target_simplex_var.trace("w", _update_extra_targets_label)
 
 
 def _ensure_libraries_loaded():
@@ -1491,9 +1491,9 @@ def _populate_target_simplex(*args):
     _populate_simplex_menu(target_complex_var, target_simplex_menu, target_simplex_var)
 
 
-select_SQLite_DB_var.trace_add("write", _populate_cross_complex_menus)
-source_complex_var.trace_add("write", _populate_source_simplex)
-target_complex_var.trace_add("write", _populate_target_simplex)
+select_SQLite_DB_var.trace("w", _populate_cross_complex_menus)
+source_complex_var.trace("w", _populate_source_simplex)
+target_complex_var.trace("w", _populate_target_simplex)
 
 # ── DB table / field selection row ────────────────────────────────────────
 select_DB_tables_lb = tk.Label(window, text="DB tables ")
@@ -1621,7 +1621,7 @@ def get_table_fields_list(*args):
         _insert_or_replace_placeholder(tableName, is_table=True)
 
 
-select_DB_tables_var.trace_add("write", get_table_fields_list)
+select_DB_tables_var.trace("w", get_table_fields_list)
 
 
 def get_table_fields_name(*args):
@@ -1630,7 +1630,7 @@ def get_table_fields_name(*args):
         _insert_or_replace_placeholder(select_DB_table_fields_var.get(), is_table=False)
 
 
-select_DB_table_fields_var.trace_add("write", get_table_fields_name)
+select_DB_table_fields_var.trace("w", get_table_fields_name)
 
 
 select_DB_table_fields_lb = tk.Label(window, text="DB table fields")
@@ -1914,7 +1914,7 @@ def _update_sql_query_hover(*args):
     SQL_query_entry.bind("<Leave>", lambda e: GUI_IO_util.delete_display_widget_lb(window, e, ""))
 
 
-query_name_var.trace_add("write", _update_sql_query_hover)
+query_name_var.trace("w", _update_sql_query_hover)
 _update_sql_query_hover()  # Initial bind
 
 # Right-align the SQL query text area and Save button
@@ -2019,8 +2019,8 @@ def display_SQL(*args):
         SQL_query_entry.configure(state="disabled")
 
 
-auto_SQL_var.trace_add("write", display_SQL)
-# SQL_query_var.trace_add('write',display_SQL)
+auto_SQL_var.trace("w", display_SQL)
+# SQL_query_var.trace('w',display_SQL)
 
 display_SQL()
 

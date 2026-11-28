@@ -26,17 +26,9 @@ Moved out of PLAN.md on 11 Nov 2026. The sections keep their scan dates; nothing
 
 **How it was found:** every `src/*.py` whose module name appears nowhere else in `src/`, `tests/`, `lib/`, the specs, the workflows or the setup scripts (`grep -w`), plus the §5.1 findings. A mention in a comment counts as a use, so the list is short of complete (`videos_util` was found only by reading). Not swept: dead functions and branches inside live modules (§12.7 counts 496 unused variables); `lib/` data files; TIPS pdfs no GUI names.
 
-### 1.1 The rest of PR #1706 (1.6.48, needs Roberto's yes)
+### 1.1 Kept from #1706
 
-1.6.47 (23 Nov) deleted the legacy setup scripts, `src/requirements*.txt` and moved the Windows icon to `lib/images/` (#1800). What is below is the rest of #1706, held while it was unclear whether the family viewer needed any of it. It does not (23 Nov): the viewer (`family_archive_app.py`, `gedcom_to_csv.py`) moved to a private repo on 16 Jun 2026 (`d6bcf213`) and imported only pandas, geopy and the standard library; `build-family-viewer.yml` builds `FamilyArchiveViewer.spec` and `GedcomConverter.spec`, which left the repo with it. Rebase #1706 on `roberto` and drop what is already gone. Each file below was checked: nothing imports it, launches it with `run_script`, or names it in a workflow.
-
-| Group | Files | Evidence |
-|---|---|---|
-| PC-ACE debugging scripts (June 2026) | `src/_add_indexes.py`, `_add_indexes_now.py`, `_check_idx.py`, `_check_path.py`, `_debug_hops.py`, `_debug_xref.py`, `_test_actor_process.py`, `_test_cross_join.py` | One-off scripts with a hard-coded `C:/Users/rfranzo/Desktop/...sqlite` path; imported nowhere |
-| Unused modules | `GIS_heatMapIntegration.py`, `GIS_heatMapintegration_ver2.py`, `html_annotator_extractor_util_NEW.py`, `knowledge_graphs_DBpedia_util_SPARQL.py` (440 lines), `nyt_api_call.py`, `TensorFlow_semantic_analysis.py`, `POTUS_webscraper.py` (2023), `pandas_compat_util.py`, `videos_util.py`, `NLP_setup_download_jars.py` | Imported nowhere. `pandas_compat_util` (July 2026) is a shim for pandas < 1.3 that nothing ever adopted; pandas 2 is pinned. `videos_util` is imported only in commented-out lines (`GUI_util`, `NLP_welcome_main`); `NLP_setup_download_jars` was named only in the old spec's hidden imports |
-| Repo root and workflows | `post_build_fixup.py`, `wiki-draft-About.md`, `.github/workflows/build-family-viewer.yml` | §5.1 #14. The spec mentions `post_build_fixup` only in a comment |
-
-**Checks for the PR:** rerun the grep on the final tree; `pytest tests/`; `tests/gui_smoke.py`; `bundle_gate.py` (some names were in the spec's hidden imports); CHANGELOG: one line ("Removed unused files; nothing a tool uses changed").
+#1706 (1.6.48) deleted the files §1.1 listed except `post_build_fixup.py`: `NLP_Suite.spec` names it as the local-build counterpart of the workflow's "Copy data directories to dist" step, and it patches `python-env/bin` shebangs (`194365c5`). It is not dead while anyone builds locally. Delete it only together with a note in the spec on how to build locally without it.
 
 ### 1.2 Looks dead, is not
 
@@ -68,7 +60,7 @@ The PyInstaller executable runs only the menu; every tool runs on `python-env`. 
 
 - `umap-learn`, `hdbscan`: not imported, but BERTopic depends on them; keep.
 - `lib/namesGender` (34 MB of CSV) compresses well in the zip already; leave it.
-- PR #1706's deletions and a §1.3 `vulture` pass are cleanup, not size.
+- A §1.3 `vulture` pass is cleanup, not size.
 
 ### 2.5 The checks
 
@@ -91,7 +83,7 @@ Each of these was found while testing 1.6.47 and is pinned or patched so that re
 
 | What | Where | Why it is held | To move it |
 |---|---|---|---|
-| Tcl/Tk 8.6: python-build-standalone `20251217`, CPython 3.11.14 | `build-installers.yml` (`PBS_TAG`, and a step that fails the build if python-env's Tcl is not 8.6) | From `20260113` on, the 3.11 builds carry Tcl/Tk 9 (`20261110`: 3.11.18 with 9.0.4). Tcl 9 removed `trace variable`, so every GUI that calls `.trace("w", ...)` crashed at open (54 in the first candidate). 3.11.14 lacks four CPython patch releases | §3.3: ported on `chore/tcl9-trace-add`, the bump on `chore/1.6.49-python-3.11.18` (1.6.49) |
+| Tcl/Tk 8.6: python-build-standalone `20251217`, CPython 3.11.14 | `build-installers.yml` (`PBS_TAG`, and a step that fails the build if python-env's Tcl is not 8.6) | From `20260113` on, the 3.11 builds carry Tcl/Tk 9 (`20261110`: 3.11.18 with 9.0.4). Tcl 9 removed `trace variable`, so every GUI that calls `.trace("w", ...)` crashed at open (54 in the first candidate). 3.11.14 lacks four CPython patch releases | §3.3 (1.6.49) |
 | `pandas>=2.2,<3` | `requirements.txt` | Python 3.10 held it at 2.x; on 3.11 it resolves to 3.1 (default string dtype, copy-on-write). Two tests failed on it (`test_conll_sentence_table`, `test_shape_of_stories_clustering`) | A migration of its own: the pandas 3 deprecation warnings on 2.3 first, then the sweep |
 | `folium<1`, `ipython<9` | `requirements.txt` | 3.11 lifts them to 1.0 and 9; held so GIS maps and pyLDAvis change only when tested for it | Lift one at a time; the GIS and topic-modeling recipes |
 | fastcoref 2.1.6 patched at load | `coreference_neural_util.patch_fastcoref_post_init` | Unmaintained since 2023; on transformers 5 `FCorefModel` misses `post_init()` ("no attribute 'all_tied_weights_keys'"). The patch calls it; weights and clusters match 4.51.3 | Drop the patch if fastcoref gets a release, or replace fastcoref |
@@ -99,17 +91,14 @@ Each of these was found while testing 1.6.47 and is pinned or patched so that re
 
 The local dev env for 3.11 is `NLP311` (conda, Python 3.11.18, Tcl 8.6.15). It did not catch the Tcl 9 crash, because conda's Python has Tcl 8.6: only a sweep or `bundle_gate.py` on the built zip did.
 
-### 3.3 Tcl/Tk 9 (1.6.49)
+### 3.3 Tcl/Tk 9 (proposed 1.6.49)
 
-Goal: bundle the newest CPython 3.11 from python-build-standalone, which now comes only with Tcl/Tk 9. Where each step stands (27 Nov):
+Goal: bundle the newest CPython 3.11 from python-build-standalone, which now comes only with Tcl/Tk 9.
 
-1. **A Tcl 9 dev env: done.** `~/Documents/NLP_output/candidates/tcl9-env/python` is `cpython-3.11.18+20261124` for the Mac (Tcl/Tk 9.0.4, SHA256 checked), with `requirements.txt`, `requirements-mac.txt` and `en_core_web_sm` installed. Every `*_main.py` built on it with `bundle_gate.py`'s harness (real Tk, windows hidden): with `roberto`'s `src/`, 54 crash at open (`bad option "variable": must be add, info, or remove`), as in the first 1.6.47 candidate, so the env reproduces the problem.
-2. **Port the traces: done, `chore/tcl9-trace-add`.** 286 `.trace("w", cb)` calls in 51 files (commented-out ones included) became `.trace_add("write", cb)`, which Tcl 8.6 has too, so it can merge before the Python moves. No callback reads the mode argument (an AST scan of every callback). `tests/test_tk9_compat.py` fails on any old-style trace left in `src/`. With the port, 54 GUIs build on Tcl 9 and `NLP_setup_IO_main` exits while opening, as it does on 8.6 (1.6.47's bundle gate).
-3. **The rest of Tk 9: done on the Mac, `chore/tcl9-trace-add`.** Two bundles that differ only in their Python (3.11.14/Tk 8.6 and 3.11.18/Tk 9), same `src/`, `config/`, `TIPS/` and `jre/`, in `~/Documents/NLP_output/candidates/tcl9-env/pair-*`:
-   - **At open, the same on both:** every GUI's status, and the popups and launches it records, match for all 55 (`pair-tk86.json`, `pair-tk9.json`).
-   - **Layout: Tk 9 drew fonts a third larger.** Tk 8.6 on the Mac drew N points as N pixels; Tk 9 draws 4/3 N and ignores `tk scaling` for fonts (Courier 12 measured 260 px at every scaling from 0.5 to 2). `gui_layout_gate.py` (windows made transparent with `-alpha 0`, so nothing showed on screen): Tk 8.6 49 pass, 1 fail (wordclouds, 71 px, already there); Tk 9 11 pass, 39 fail (overflow up to 452 px). `src/tk9_fonts_util.py`, applied by `GUI_util` and `GUI_IO_util` before the first window, turns point size N into pixel size -N in widget options, ttk styles and `tkinter.font.Font`, on macOS with Tk 9 only. With it Tk 9 matches 8.6 exactly: 49 pass, the same wordclouds overflow.
-   - **Still to look at:** Windows (Tk 9 there was not measured; the shim does nothing on Windows), `tkcolorpicker`'s dialog, `PhotoImage` formats, and a look at a few GUIs by a person (the gate measures geometry, not looks). The frozen menu (`_internal`) runs on the build runner's own Python, which keeps Tcl 8.6, so the Windows Tcl DLL list in `build-installers.yml` does not change; the self-updater's window and the Network Graph app use `pack`, which grows to fit.
-4. **The bump: on `chore/1.6.49-python-3.11.18`, not built.** `PBS_TAG` `20261124`, `PY_VER` `3.11.18`, both SHA256 lines from that release's `SHA256SUMS`, and the Tcl check flipped to 9. Still to do once a candidate is built: the full tool sweep against 1.6.48, the bundle gate, the self-updater (a second python-env swap), and a Windows check (everything above ran on a Mac).
+1. **A Tcl 9 dev env.** Unpack `cpython-3.11.18+20261110` (or newer) for the Mac, install `requirements.txt` + `requirements-mac.txt` into it, and run `tests/gui_smoke.py` and `tests/gui_layout_gate.py` on it. That reproduces the crash without a CI build.
+2. **Port the traces.** `src/` has 267 `.trace("w", ...)` calls in 52 files (the old `trace_variable` form, removed in Tcl 9). Change each to `.trace_add("write", callback)`, which exists on Tcl 8.6 too, so the port can merge before the Python moves. The callback's third argument becomes `"write"` instead of `"w"`: grep for callbacks that read it (most are `lambda x, y, z:` and ignore it). A test can fail on any `.trace("` left in `src/`.
+3. **Then the rest of Tk 9**, found by the smoke and layout gates on the Tcl 9 env: CustomTkinter 6.0.0 and `tkcolorpicker` on Tk 9, fonts and scaling (Tk 9 changes the default scaling on Mac and Windows), `PhotoImage` formats, and anything `bundle_gate.py` lists.
+4. **Then the bump:** `PBS_TAG`, the URLs, the two SHA256 lines, and the Tcl check flipped to 9. Full tool sweep against the previous release, bundle gate, and the self-updater (a second python-env swap).
 
 ## 5. Outdated copy and flows (scan of 9 Nov 2026)
 
@@ -135,7 +124,7 @@ Deletions and behaviour changes. Each is ready to do once decided.
 | 11 | `parsers_annotators_main` | Two unreachable "select Stanford CoreNLP as your default package" branches (300–313, 395–408); "Open coreference GUI" checkbox is read and never used; Word2Vec item never matches its own label; coreference item says "via spaCy" (coreferee is gone); Stanza constituency says "not available yet" though Setup offers it | One PR for the annotator menu |
 | 12 | Open-GUI launchers that use `sys.executable` | `DB_PCACE_data_analysis_main`, `DB_PCACE_data_validation_main`, `DB_SQL_main` (frozen: that is the app, not Python); `corpus_checker_PCACE_data_main` runs `sudo Python X_main.py` on a Mac and launches `WordNet.py`, which does not exist | Use `run_script_util` everywhere |
 | 13 | TIPS menu | "pip install & Anaconda environments", "Python: download, install, run", "Anaconda & pip useful commands" are second in the main TIPS list | Move to the end as developer TIPS, or remove. The pdfs themselves, and the Java / CoreNLP / MALLET install TIPS and "Topic modeling and corpus size", need a read |
-| 14 | Dead files | `videos_util.py` (pafy/vlc, imported nowhere), `NLP_setup_download_jars.py`, `knowledge_graphs_DBpedia_util_SPARQL.py`, `nyt_api_call.py`, `html_annotator_extractor_util_NEW.py`, `TensorFlow_semantic_analysis.py`, `GIS_heatMapIntegration.py`, `GIS_heatMapintegration_ver2.py`, `post_build_fixup.py`, `wiki-draft-About.md`, `.github/workflows/build-family-viewer.yml` (its spec files are not in the repo) | **1.6.48, §1.1.** |
+| 14 | Dead files | Deleted by #1706 (1.6.48), except `post_build_fixup.py` (§1.1) | Done |
 | 16 | Reminders | 51 titles are in `reminders.csv` twice, under a GUI and under `*`. Popups read only the `*` row, the dropdown toggles the GUI row, so switching a reminder off there does nothing. About 12 definitions in `reminders_util` are used nowhere (Java 64-bit `-d64`, "CoreNLP Server is shutting down", tkinter Mac bug, SVO/WordNet/MALLET/Google Earth "system requirements") | Delete the per-GUI duplicates and the unused definitions |
 | 18 | wordclouds | Menu offers Wordle (site gone) and Tagxedo (needs Silverlight); "Tagul" is now WordArt; Python WordCloud asks for internet though it needs none | Remove the two, rename the third, drop the check |
 | 19 | `MEMO_Development_Notes.md`, `docs/CustomTkinter-Migration-Plan.md` | June 2026 history (Python 3.8 build, Mac Intel CI, files since deleted); a plan that names `setup-app/` and says installers build from `roberto` | A "historical" banner on each, or delete |
@@ -251,6 +240,28 @@ Read from the code only: 96 `iterrows()` / row-append patterns in 29 files, most
 
 Every change follows CLAUDE.md: unit tests for new helpers, `pytest tests/`, and `python tests/gui_smoke.py` after any GUI edit.
 
+### 6.11 Re-measured on Python 3.11 (27 Nov 2026)
+
+`tests/startup_bench.py` on the published Mac zips, Apple M2 (8 GB): 1.6.46 (CPython 3.10.15) against 1.6.47 (CPython 3.11.14), each a fresh unzip, three runs per item in a fresh process, the two releases taking turns. "Warm" is the median of runs 2–3; "first" is run 1, a student's first open after unzipping. Raw data: `~/Documents/NLP_output/bench/startup_1.6.46_vs_1.6.47.json` (rebuild the tables with `startup_bench.py report`).
+
+| | 1.6.46 warm | 1.6.47 warm | 1.6.47 / 1.6.46 |
+|---|---|---|---|
+| `python -c pass` | 0.02 s | 0.01 s | 0.50 |
+| `import GUI_util` | 0.88 s | 0.77 s | 0.88 |
+| All 55 GUIs opened, total | 213.4 s | 212.5 s | 1.00 |
+| Light GUIs (about 1 s: file tools, setup GUIs, the menu) | | | mostly 0.66–0.86 (html_annotator 1.17) |
+| Heavy GUIs (5–13 s: style, syntactic, topic modeling, SVO, spell checker, PC-ACE) | | | 0.79 (word2vec) – 1.14 |
+| The 26 heavy libraries alone, total | 32.1 s | 33.7 s | 1.05 |
+
+**What it says.** Python 3.11 made the interpreter and the Suite's own code faster, so most light GUIs open 15–35 % sooner. Heavy GUIs did not, on the whole, get faster, because their time is library import, and the library versions 3.11 brought are a little slower to import: BERTopic 8.6 → 9.7 s, sentence-transformers 4.7 → 5.3 s, Stanza 1.2 → 1.5 s, NLTK 1.1 → 1.3 s (transformers 5 halved, 0.95 → 0.49 s). Overall opening time is unchanged; §6.2–6.3 (import heavy libraries at RUN, not at open) is still the lever.
+
+**The first open after unzipping is the slow one.** Run 1 of each library on a fresh unzip, against warm: BERTopic 40 s (9.7), spaCy 21–26 s (1.2–1.4), scikit-learn 19 s (0.9), seaborn 16 s (1.2), sentence-transformers 13–15 s (5), pandas 13 s (0.3). The same in both releases, and the zip ships its `.pyc` files (22,940 of 23,306 in `site-packages`), so it is not compilation; most likely macOS checking each library file the first time it is loaded. A student pays it once per library, on whichever GUI first imports it: up to about a minute on the first open of a heavy GUI. Not measured on Windows (Defender scans first loads too). A possible fix: after an install or update, import the heavy libraries once in a background process while the welcome screen shows.
+
+**The analyses themselves: no change.** 20 Python-heavy tool-sweep recipes (one or two per family) plus `parser_CoreNLP` as a control, on the same two zips, the releases alternating per recipe, 3 rounds with the first-run order swapped (median of 3; `~/Documents/NLP_output/bench/sweep_interleaved.json`, the script beside it). The 20 together: 629 s on 1.6.46, 615 s on 1.6.47 (0.98). Faster by 10–21 %: SVO with spaCy (0.79), Character Emotion Arcs (0.82), NER with Stanza (0.86), the profiler's characters (0.88), BERTopic and word2vec BERT (0.89). Slower: fastcoref (1.10), BERT sentiment (1.05), the HTML dictionary annotator (1.04); the rest within ±5 %. The CoreNLP control, which Python cannot affect, came out at 0.76 and ranged 44–90 s within a release: differences under about 15 % on one tool are noise. Why so little: 3.11's speed-up is in running pure-Python bytecode, and these tools spend their time in PyTorch, spaCy's compiled code, numpy/pandas/scikit-learn and Java; 3.11 also brought newer libraries (transformers 5, numpy 2.4, scikit-learn 1.9), which the comparison cannot separate from the Python change. Two single full sweeps (1.6.46 and 1.6.47 on 27 Nov, `tool_sweep/1.6.46-rerun`, `tool_sweep/1.6.47`) differed by -38 to +73 % on CoreNLP tools alone, so a single sweep's timings are not a benchmark; `compare`'s SLOWER list is for review only, as it says.
+
+**Compared with §6.2–6.3 (Windows, 9 Nov):** `import GUI_util` is 0.8 s here, not 4.6 s, and the heaviest GUI 13 s, not 30–40 s. Part of that is the Mac, part the work since (1.6.44 moved `requests`, #1704 the Stanza model check). Re-measure on Windows before ranking §6.2's fixes again.
+
+
 ## 7. UI overhaul: findings (10 Nov 2026)
 
 **Decision so far:** stay with CustomTkinter (CTk). A TypeScript front end would mean rewriting 55 GUIs and the way they start each other; CTk keeps every `run()` as it is.
@@ -308,8 +319,6 @@ Reviewed 9 Nov 2026. The older PRs conflict only because v1.6.40 reformatted all
 
 | PR | Opened | What | Merge | Tests | Release | Review |
 |---|---|---|---|---|---|---|
-| #1706 | 11-10 | The rest of the dead files (§1.1); its legacy-setup part shipped in 1.6.47 (#1800) | Conflicts: rebase and drop the files #1800 deleted | — | 1.6.48, if Roberto agrees | The pre-tag build and `bundle_gate.py` are its test |
-| #1803 | 11-23 | Tests: one file per `src/` module (pure move, 104 → 76 files, 979 tests collected before and after) | Conflict with 1.6.47's `test_WSI.py` change | Full run equal before and after | 1.6.48 | Rebase; also fold #1801's two BERT test files |
 | #1682 | 10-16 | spaCy CoNLL ID/HEAD sentence-level and 1-based | Conflict: ruff only, mechanical | 2 pass | Later (shared structure) | Correct: Stanza and CoreNLP already write 1-based, sentence-level, root 0, and no reader compensates for spaCy's old values. Shared structure, so not in a release about the updater. spaCy tables already on disk stay 0-based: say "re-parse" in the CHANGELOG |
 | #1683 | 10-16 | Gender dictionary looks up only PERSON tokens | Conflict: ruff only | 5 pass | No | **Needs changes:** hardcodes `Stanford_CoreNLP_util.CoreNLP_annotate` whatever parser is configured (so the option now needs Java); returns `''` with no message when no NER csv comes back; once "Will" is a PERSON anywhere, every "will" is tagged |
 | #1528 | 2024-09 | "dictionary functionality" (CallaGong) | — | — | No | **Close**: targets `current-stable`, 2 years old |
@@ -393,6 +402,7 @@ Largest reliability lever. Convert to `except Exception`, and on user-facing pat
 - **Late-binding closures in loops (B023): 8.** `statistics_csv_util.py` (`col`, `df`/`currentColumn`, `temp_str`), `CoNLL_k_sentences_util.py`, `charts_Plotly_util.py`, `charts_util.py`. Verify each, then bind at definition (`lambda col=col: ...`).
 - **Mutable default arguments (B006): 47.** Mechanical fix.
 - **Shadowed redefinitions (F811): 5** [37].
+- **Ties come out in a different order on every run.** Sweeping the published 1.6.47 against its rc2 (27 Nov) found the same rows and counts but a different order in the CoNLL noun/verb lists, the WordNet/FrameNet/VerbNet frequency tables and charts (WordNet "location" and "cognition", both 49), the WordNet zoom-in person list, and one pyspellchecker correction ("Barkskins": "bearskins" or "buckskins", equally close). Python randomizes string hashing per process, so anything that goes through a `set` (or sorts by count only) orders its ties differently each time. Results are right but not reproducible file for file. **Fixed on `fix/tie-order` (28 Nov):** `CoNLL_util.get_nouns_verbs_CoNLL` writes its lists sorted, so the tables built from them follow; `file_spell_checker_util.stable_correction` replaces pyspellchecker's `correction()` (`max()` over a set) and takes ties in alphabetical order. **Still open:** the WordNet zoom-in person list (`semantic_aggregation_WordNet_util.disaggregate_GoingDOWN`) also changed order between 1.6.47 and the 1.6.49 candidate, on one fixed keyword ("person") whose hyponyms NLTK returns sorted, so its cause may be something other than hash order (an NLTK or WordNet-data version difference between the two builds?): not verified.
 
 ### 12.5 Fragility
 
@@ -402,8 +412,9 @@ Largest reliability lever. Convert to `except Exception`, and on user-facing pat
 ### 12.6 Tests
 
 Coverage is 683 test functions in 67 files [3]. Gaps:
-- No **empty-DataFrame** regression test for the chart/statistics pipeline (only `test_emotion_arc_html.py` covers an empty frame).
+- No **empty-DataFrame** regression test for the chart/statistics pipeline (only the emotion-arc tests in `test_character_emotion_arcs_util.py` cover an empty frame).
 - No **multi-column chart** regression test for `charts_util` (the v1.6.4 "by Document" grouped-bar fix has no test).
+- **`test_hc_runs_on_real_scikit_learn` fails in a full local run** (27 Nov, on `roberto` too), and passes alone: real scipy's import meets a stub another test file left in `sys.modules` (`TypeError: issubclass() arg 2 must be a class` in `scipy.stats._new_distributions`). CI skips it (no scikit-learn there). Find the stub it meets, and hide it the way the test already hides scikit-learn/scipy stubs.
 
 ### 12.7 Hygiene
 
@@ -421,7 +432,7 @@ Head branches of merged PRs are deleted automatically (repo setting since 18 Nov
 - `mac-font-pin` (22 Jul 2026): not in `roberto`, no open PR. Check whether it's still needed.
 - `dictionary` (Sep 2024), `taeeun` (Dec 2024): heads of stale PRs #1528 and #1525. Delete after those PRs are closed.
 - `remove_shortcut_prompt` (2021), `tony` (2023): no open PR. Delete candidates.
-- Cora's, open work: `chore/remove-dead-files` (#1706), `chore/tests-one-file-per-module` (#1803). The 1.6.43 spike branches and the 1.6.44 backup were deleted on 23 Nov.
+- Cora's, open work: the 1.6.48 candidate (`release/v1.6.48`, PLAN) and 1.6.49 (`chore/tcl9-trace-add`, `chore/1.6.49-python-3.11.18`). The 1.6.43 spike branches and the 1.6.44 backup were deleted on 23 Nov.
 
 Deleting someone else's remote branch is Roberto's call.
 
@@ -433,7 +444,7 @@ Deleting someone else's remote branch is Roberto's call.
 - **A release may delete files.** The self-updater installs the new release as a whole folder and carries over only `config/`, `reminders/` and files the user added (not in the old manifest); a release file the new release drops is left in `<folder>_previous` and goes with it. A dropped file the user had edited stays in that backup, which is then kept (`user_files` in `NLP_setup_self_update_util.py`).
 - **Pillow** is pinned to 13.0.0 (1.6.47). The old 10.4.0 pin was for a Tcl/Tk crash in `PIL.ImageTk`, which only the Google Earth icon preview still uses, inside a try/except. Don't add new `ImageTk` callers: use `GUI_util.tk_image_from_pil`.
 - **transformers** is `>=5.10` (1.6.47). Don't add a package that holds it below 5; `bert-extractive-summarizer` did, and was removed for it.
-- **CI Python:** 3.11 for tests and installers, and the bundled `python-env` is CPython 3.11.14 from python-build-standalone `20251217` (1.6.47), the last with Tcl/Tk 8.6. 1.6.49 moves it to `20261124` (3.11.18, Tcl/Tk 9.0.4) after the `trace_add` port, and the build then fails if python-env's Tcl is not 9. SRL stays on its own 3.8 env.
+- **CI Python:** 3.11 for tests and installers, and the bundled `python-env` is CPython 3.11.14 from python-build-standalone `20251217` (1.6.47), the last with Tcl/Tk 8.6. Don't move PBS_TAG past it until `src/` is ported to Tcl 9 (`.trace("w", ...)` → `trace_add("write", ...)`, 276 calls, then a full GUI pass); the build now fails if python-env's Tcl is not 8.6. SRL stays on its own 3.8 env.
 - **Mac runners:** `macos-15` since 2 Nov 2026 (`macos-14` retired). No Intel Mac build.
 - **`src/` is Ruff-formatted** (v1.6.40). PRs opened before that need a rebase, not a hand merge.
 - **Update order matters.** The in-app check reads `current-stable`'s `lib/release_version.txt`, which changes before the tag's zips finish building. The self-updater and the launch popup both wait until that version's zip is on the release page.
@@ -444,6 +455,8 @@ Deleting someone else's remote branch is Roberto's call.
 - **`bundle_gate.py` sets `DO_NOT_TRACK=1`** for every program it runs, and ignores CustomTkinter's `application has been destroyed` traceback when it closes the menu (both were false alarms on 17 Nov). `lib/release_version.txt` must equal the tag (CI enforces it).
 
 ## 15. The updater: known limits
+
+- **The start race (fixed in 1.6.48).** On a GitHub Windows runner (28 Nov) PowerShell took 30 s to start the swap script; the app gave up at 30 s, said the installer did not start, and deleted the download while the script was starting, which then moved the NLP Suite aside, found nothing to install and moved it back. 1.6.48 waits 120 s and claims the start flag atomically (the app on a timeout, the script as its first act), so a late script changes nothing. Updates *from* 1.6.47 still run 1.6.47's 30 s code: a slow Windows machine may see "the program that installs the new version did not start" once; its NLP Suite keeps working, and the next close tries again.
 
 - **Long paths:** staging is 17 characters deeper than the install; without Windows LongPathsEnabled the deep `node_modules` paths (#1653) fail to unpack. Fails safely with a message. Fix with #1653.
 - No checksum (GitHub's asset `digest` is unused) and no resume of a broken download. Ctrl-C during the download leaves `_update` behind, which blocks updates for 24 h (the message says which folder to delete).
