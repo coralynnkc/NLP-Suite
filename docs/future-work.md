@@ -409,6 +409,7 @@ Largest reliability lever. Convert to `except Exception`, and on user-facing pat
 - **Late-binding closures in loops (B023): 8.** `statistics_csv_util.py` (`col`, `df`/`currentColumn`, `temp_str`), `CoNLL_k_sentences_util.py`, `charts_Plotly_util.py`, `charts_util.py`. Verify each, then bind at definition (`lambda col=col: ...`).
 - **Mutable default arguments (B006): 47.** Mechanical fix.
 - **Shadowed redefinitions (F811): 5** [37].
+- **Ties come out in a different order on every run.** Sweeping the published 1.6.47 against its rc2 (27 Nov) found the same rows and counts but a different order in the CoNLL noun/verb lists, the WordNet/FrameNet/VerbNet frequency tables and charts (WordNet "location" and "cognition", both 49), the WordNet zoom-in person list, and one pyspellchecker correction ("Barkskins": "bearskins" or "buckskins", equally close). Python randomizes string hashing per process, so anything that goes through a `set` (or sorts by count only) orders its ties differently each time. Results are right but not reproducible file for file: sort ties by name (`sorted(..., key=lambda x: (-count, name))`), and for the spell checker pick the first candidate in sorted order. Until then the sweep lists these for review.
 
 ### 12.5 Fragility
 
