@@ -32,6 +32,7 @@ Ask students who report update problems to send the update log to coralynn.yang@
 
 ## After 1.6.49
 
+- **Python 3.14** (future-work §3.4): the only way to Tcl/Tk 9 on Windows, and due before 3.11's end of life (October 2027). Requirements resolve on 3.14 for both platforms; gensim has no 3.14 wheels and must build from source. Its own release, like 1.6.47.
 - **pandas 3, folium 1, ipython 9** (§3.2): 1.6.47 caps them below those versions; moving to each is its own change, tested with the sweep.
 - **Trim the spec further** (§2.1): it keeps spaCy, pandas and the rest for the language advisor, which since #1732 runs on `python-env`. Probe build first.
 - **Performance**, in §6.10's order: next, pandas out of `GUI_util` (§6.3).
