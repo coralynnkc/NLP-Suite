@@ -110,7 +110,8 @@ jobs:
         run: |
           set -euo pipefail
           DIST="dist/NLP_Suite/python-env"
-          # From 20260113 on, python-build-standalone's 3.11 builds carry Tcl/Tk 9 (20261124: 3.11.18, Tcl 9.0.4).
+          # From 20260113 on, python-build-standalone's Mac 3.11 builds carry Tcl/Tk 9 (20261124: 3.11.18, Tcl 9.0.4);
+          # its Windows 3.11 builds keep Tcl/Tk 8.6 (20261124: 8.6.15). Windows gets Tk 9 only with Python 3.14.
           # Tcl 9 removed `trace variable`; src/ uses trace_add since 1.6.49 (tests/test_tk9_compat.py), so the
           # GUIs run on 9. 1.6.47-1.6.48 stayed on 20251217 (3.11.14, the last with 8.6). The check below
           # enforces Tcl 9, so a PBS_TAG change cannot slip back to 8.6 unnoticed.
