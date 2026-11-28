@@ -5,6 +5,7 @@ on the corresponding GitHub Release page (the top section is added automatically
 release workflow). Keep the newest version's section at the very top and update it before tagging.
 
 ## Unreleased
+- **The NLP Suite runs on Python 3.11.18 with Tcl/Tk 9.** The bundled Python moves from 3.11.14 to 3.11.18, which brings four Python security releases. These Python builds come only with Tcl/Tk 9, the toolkit that draws the windows, so windows may look slightly different. Like 1.6.47, the update replaces the whole bundled Python, so it is a larger download than usual.
 - **Ready for Tcl/Tk 9 (behind the scenes).** Every window now watches its menus and checkboxes the way both Tcl/Tk 8.6 and 9 support (286 places), and on a Mac with Tcl/Tk 9 text is drawn at the size the windows were laid out for (Tk 9 draws it a third larger), so the NLP Suite can move to the newest Python 3.11 builds, which come only with Tcl/Tk 9. Nothing changes on the current version.
 
 ## v1.6.47
