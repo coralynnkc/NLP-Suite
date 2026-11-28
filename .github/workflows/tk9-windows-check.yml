@@ -1,15 +1,29 @@
-name: Tk 9 Windows check
+name: Release candidate checks (Windows, Mac)
 
-# Test branch only, not for merging. PLAN 1.6.49 step 3, on a GitHub Windows runner (100 % scaling):
-# the candidate zip (CPython 3.11.18, Tk 9) against the published 1.6.47 zip (CPython 3.11.14, Tk 8.6).
+# Test branch only, not for merging. Builds the candidate zips (build-installers.yml) and checks each
+# against a published release's zip on the same OS (default 1.6.47; pick another when starting it by hand):
+#   check        Tk/DPI probes, bundle_gate snapshot + compare, gui_layout_gate and a screenshot gallery
+#                on both zips' python-env (same src/: this checkout's)
+#   sweep        tests/tool_sweep.py on each zip (its own src/ and python-env), then compare
+#   self-update  the baseline's own updater installs the candidate (docs/future-work.md §14)
 on:
   workflow_dispatch:
+    inputs:
+      baseline:
+        description: Published release to compare against (e.g. 1.6.48)
+        default: '1.6.47'
   push:
     branches:
       - claude/tcl9-gui-upgrades-0fr6u2
 
 permissions:
   contents: read
+
+env:
+  BASE: ${{ inputs.baseline || '1.6.47' }}
+  DO_NOT_TRACK: '1'
+  NLP_SILENT: '1'
+  PYTHONIOENCODING: utf-8
 
 jobs:
   build:
@@ -20,60 +34,59 @@ jobs:
 
   check:
     needs: build
-    runs-on: windows-latest
     timeout-minutes: 240
-    env:
-      DO_NOT_TRACK: '1'
-      NLP_SILENT: '1'
-      PYTHONIOENCODING: utf-8
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, artifact: NLP-Suite-windows-x64, py: python-env/python.exe }
+          - { os: macos-15, artifact: NLP-Suite-mac-arm64, py: python-env/bin/python3 }
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v7
-
-      - name: Get the candidate build
-        uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8
         with:
-          name: NLP-Suite-windows-x64
+          name: ${{ matrix.artifact }}
           path: cand_zip
-
-      - name: Get the published 1.6.47 Windows zip
-        run: curl -fSL -o base.zip https://github.com/NLP-Suite/NLP-Suite/releases/download/v1.6.47/NLP-Suite-windows-x64.zip
-
+      - name: Get the published ${{ env.BASE }} zip
+        run: curl -fSL -o base.zip "https://github.com/NLP-Suite/NLP-Suite/releases/download/v$BASE/${{ matrix.artifact }}.zip"
       - name: Unzip both
         run: |
           set -euo pipefail
-          7z x -y -ocand cand_zip/NLP-Suite-windows-x64.zip > /dev/null
-          7z x -y -obase base.zip > /dev/null
-          for d in cand base; do
-            "$d/NLP_Suite/python-env/python.exe" -c "import sys, tkinter; print('$d', sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
+          bash .github/tk9-check/unzip_bundle.sh "cand_zip/${{ matrix.artifact }}.zip" cand
+          bash .github/tk9-check/unzip_bundle.sh base.zip base
+          for d in base cand; do
+            "$d/NLP_Suite/${{ matrix.py }}" -c "import sys, tkinter; print('$d', open('$d/NLP_Suite/lib/release_version.txt').read().strip(), 'Python', sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
           done
           mkdir -p results config
           cp lib/config_defaults/*.csv config/
-
-      - name: Python with PyInstaller (for the menu archive in bundle_gate)
-        uses: actions/setup-python@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
       - run: pip install pyinstaller
 
-      - name: DPI and Tk 9 feature probes
+      - name: Tk probes (DPI on Windows only)
         continue-on-error: true
         run: |
-          for d in cand base; do
-            PY="$d/NLP_Suite/python-env/python.exe"
-            { "$PY" .github/tk9-check/dpi_probe.py; echo; "$PY" .github/tk9-check/tk9_features_probe.py; } 2>&1 | tee "results/probe-$d.txt"
+          for d in base cand; do
+            PY="$d/NLP_Suite/${{ matrix.py }}"
+            {
+              if [ "$RUNNER_OS" = "Windows" ]; then "$PY" .github/tk9-check/dpi_probe.py; echo; fi
+              "$PY" .github/tk9-check/tk9_features_probe.py
+            } 2>&1 | tee "results/probe-$d.txt"
           done
 
       - name: bundle_gate snapshot and compare
         continue-on-error: true
         run: |
+          set -o pipefail
           for d in base cand; do
             python tests/bundle_gate.py snapshot "$d/NLP_Suite" -o "results/bundle-$d.json" --pyinstaller python 2>&1 | tee "results/bundle-$d.log"
           done
           python tests/bundle_gate.py compare results/bundle-base.json results/bundle-cand.json 2>&1 | tee results/bundle-compare.txt
-          exit "${PIPESTATUS[0]}"
 
       - name: gui_layout_gate on both Pythons (same src/)
         continue-on-error: true
@@ -81,7 +94,7 @@ jobs:
           set -o pipefail
           rc=0
           for d in base cand; do
-            "$d/NLP_Suite/python-env/python.exe" tests/gui_layout_gate.py 2>&1 | tee "results/layout-$d.txt" || rc=1
+            "$d/NLP_Suite/${{ matrix.py }}" tests/gui_layout_gate.py 2>&1 | tee "results/layout-$d.txt" || rc=1
             cp tests/gui_layout_gate.log "results/layout-$d.log" || true
           done
           exit $rc
@@ -90,73 +103,71 @@ jobs:
         continue-on-error: true
         run: |
           for d in base cand; do
-            GALLERY_OUT="results/gallery-$d" "$d/NLP_Suite/python-env/python.exe" .github/tk9-check/gui_gallery.py 2>&1 | tee "results/gallery-$d.txt"
+            GALLERY_OUT="results/gallery-$d" "$d/NLP_Suite/${{ matrix.py }}" .github/tk9-check/gui_gallery.py 2>&1 | tee "results/gallery-$d.txt"
           done
 
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: tk9-windows-check
+          name: check-${{ runner.os }}
           path: results
           retention-days: 30
 
-  # Tool sweep (tests/tool_sweep.py): each tool's real run() on lib/sampleData, on each zip's own
-  # python-env and src/. The baseline is the published 1.6.47 zip (1.6.48 is not out yet).
+  # Tool sweep: each tool's real run() on lib/sampleData, on each zip's own python-env and src/.
   sweep:
     needs: build
-    runs-on: windows-latest
     timeout-minutes: 330
     strategy:
       fail-fast: false
       matrix:
+        os: [windows-latest, macos-15]
         which: [base, cand]
-    env:
-      DO_NOT_TRACK: '1'
-      NLP_SILENT: '1'
-      PYTHONIOENCODING: utf-8
+        include:
+          - { os: windows-latest, artifact: NLP-Suite-windows-x64, py: python-env/python.exe }
+          - { os: macos-15, artifact: NLP-Suite-mac-arm64, py: python-env/bin/python3 }
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v7
-
       - name: Get the candidate build
         if: matrix.which == 'cand'
         uses: actions/download-artifact@v8
         with:
-          name: NLP-Suite-windows-x64
+          name: ${{ matrix.artifact }}
           path: zip
-
-      - name: Get the published 1.6.47 Windows zip
+      - name: Get the published ${{ env.BASE }} zip
         if: matrix.which == 'base'
-        run: mkdir -p zip && curl -fSL -o zip/NLP-Suite-windows-x64.zip https://github.com/NLP-Suite/NLP-Suite/releases/download/v1.6.47/NLP-Suite-windows-x64.zip
+        run: mkdir -p zip && curl -fSL -o "zip/${{ matrix.artifact }}.zip" "https://github.com/NLP-Suite/NLP-Suite/releases/download/v$BASE/${{ matrix.artifact }}.zip"
 
       - name: Unzip, and get CoreNLP and MALLET for the recipes that need them
         run: |
           set -euo pipefail
-          7z x -y -obundle zip/NLP-Suite-windows-x64.zip > /dev/null
+          bash .github/tk9-check/unzip_bundle.sh "zip/${{ matrix.artifact }}.zip" bundle
           rm -rf zip
-          "bundle/NLP_Suite/python-env/python.exe" -c "import sys, tkinter; print(sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
+          "bundle/NLP_Suite/${{ matrix.py }}" -c "import sys, tkinter; print(sys.version.split()[0], 'Tk', tkinter.Tcl().eval('info patchlevel'))"
+          winpath() { if [ "$RUNNER_OS" = "Windows" ]; then cygpath -m "$1"; else echo "$1"; fi; }
           mkdir -p ext
           echo "Software,Installation_path,Download_link" > external_config.csv
-          # nlp.stanford.edu refused the runner (28 Nov); Stanza's own installer downloads from Hugging Face.
+          # nlp.stanford.edu refused the Windows runner (28 Nov); Stanza's own installer downloads from Hugging Face.
           # If neither works, the CoreNLP recipes are SKIPPED rather than the whole sweep stopping.
           for url in https://huggingface.co/stanfordnlp/CoreNLP/resolve/main/stanford-corenlp-latest.zip \
                      https://nlp.stanford.edu/software/stanford-corenlp-latest.zip; do
             if curl -fSL --connect-timeout 30 --retry 2 -o corenlp.zip "$url"; then
-              7z x -y -oext corenlp.zip > /dev/null && rm corenlp.zip && echo "CoreNLP from $url" && break
+              python -m zipfile -e corenlp.zip ext && rm corenlp.zip && echo "CoreNLP from $url" && break
             fi
             echo "::warning::CoreNLP download failed: $url"
           done
           if ls -d ext/stanford-corenlp-* > /dev/null 2>&1; then
-            echo "Stanford CoreNLP,$(cygpath -m "$(ls -d "$PWD"/ext/stanford-corenlp-* | head -1)")," >> external_config.csv
+            echo "Stanford CoreNLP,$(winpath "$(ls -d "$PWD"/ext/stanford-corenlp-* | head -1)")," >> external_config.csv
           else
             echo "::warning::No CoreNLP: its recipes will be SKIPPED"
           fi
           if curl -fSL --connect-timeout 30 --retry 2 -o mallet.tgz https://github.com/mimno/Mallet/releases/download/v202108/Mallet-202108-bin.tar.gz \
              && tar -xzf mallet.tgz -C ext && rm mallet.tgz; then
-            echo "MALLET,$(cygpath -m "$(ls -d "$PWD"/ext/Mallet-* | head -1)")," >> external_config.csv
+            echo "MALLET,$(winpath "$(ls -d "$PWD"/ext/Mallet-* | head -1)")," >> external_config.csv
           else
             echo "::warning::No MALLET: its recipes will be SKIPPED"
           fi
@@ -175,7 +186,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: sweep-${{ matrix.which }}
+          name: sweep-${{ runner.os }}-${{ matrix.which }}
           path: |
             sweep-${{ matrix.which }}
             sweep-${{ matrix.which }}.log
@@ -184,8 +195,12 @@ jobs:
   sweep-compare:
     needs: sweep
     if: always()
-    runs-on: windows-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-15]
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
@@ -193,7 +208,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
-          pattern: sweep-*
+          pattern: sweep-${{ runner.os }}-*
           merge-multiple: true
       - uses: actions/setup-python@v7
         with:
@@ -210,15 +225,21 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: sweep-compare
+          name: sweep-compare-${{ runner.os }}
           path: sweep-compare.txt
           retention-days: 30
 
-  # The self-updater (docs/future-work.md §14): the published 1.6.47's own updater installs the candidate.
+  # The self-updater (docs/future-work.md §14): the baseline's own updater installs the candidate.
   self-update:
     needs: build
-    runs-on: windows-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, artifact: NLP-Suite-windows-x64 }
+          - { os: macos-15, artifact: NLP-Suite-mac-arm64 }
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
@@ -226,21 +247,21 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
-          name: NLP-Suite-windows-x64
+          name: ${{ matrix.artifact }}
           path: cand_zip
-      - name: Get the published 1.6.47 Windows zip
-        run: curl -fSL -o NLP-Suite-1.6.47-windows-x64.zip https://github.com/NLP-Suite/NLP-Suite/releases/download/v1.6.47/NLP-Suite-windows-x64.zip
+      - name: Get the published ${{ env.BASE }} zip
+        run: mkdir -p base_zip && curl -fSL -o "base_zip/${{ matrix.artifact }}.zip" "https://github.com/NLP-Suite/NLP-Suite/releases/download/v$BASE/${{ matrix.artifact }}.zip"
       - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
-      - name: Update 1.6.47 to the candidate with 1.6.47's own updater
+      - name: Update ${{ env.BASE }} to the candidate with ${{ env.BASE }}'s own updater
         run: |
           set -o pipefail
-          python .github/tk9-check/self_update_check.py NLP-Suite-1.6.47-windows-x64.zip cand_zip/NLP-Suite-windows-x64.zip "$RUNNER_TEMP/selfupdate" 2>&1 | tee self-update.txt
+          python .github/tk9-check/self_update_check.py "base_zip/${{ matrix.artifact }}.zip" "cand_zip/${{ matrix.artifact }}.zip" "$RUNNER_TEMP/selfupdate" 2>&1 | tee self-update.txt
       - name: Upload the result
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: self-update
+          name: self-update-${{ runner.os }}
           path: self-update.txt
           retention-days: 30
